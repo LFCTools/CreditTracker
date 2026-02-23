@@ -1,35 +1,3922 @@
-# TicketHelpLFC Credit Tracker (PWA)
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0b0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-This repo hosts a **single-file** PWA build of the TicketHelpLFC Credit Tracker.
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
 
-## Files
-- `index.html` – the entire app (HTML/CSS/JS + embedded fixtures)
-- `manifest.json` – PWA manifest
-- `sw.js` – service worker (offline support)
-- `icon.svg` – app icon
+  <title>LFC Tools – Credit Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+<style>
+:root{
+  --bg: #000000;
+  --surface: #1c1c1e;
+  --surface-2: #2c2c2e;
+  --surface-3: #3a3a3c;
+  --separator: #38383a;
+  --primary: #ff2d55;
+  --primary-gradient: linear-gradient(135deg, #ff2d55 0%, #ff3b30 100%);
+  --primary-dim: rgba(255, 45, 85, 0.15);
+  --text: #FFFFFF;
+  --text-secondary: #ebebf599;
+  --text-tertiary: #ebebf54d;
+  --border: rgba(255,255,255,0.1);
+  --success: #30d158;
+  --danger: #ff453a;
+  --warning: #ff9f0a;
+  --blue: #0a84ff;
+  --radius-l: 18px;
+  --radius-m: 12px;
+  --radius-s: 8px;
+  --nav-height: 60px;
+  --header-height: 50px;
+  --fab-size: 56px;
+  --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
+  --glow-card: none;
+  --card-bg: #1c1c1e;
+  --bar-bg: rgba(28, 28, 30, 0.85);
+  --modal-bg: #1c1c1e;
+  --input-bg: #2c2c2e;
+  --grad-1: rgba(255, 45, 85, 0.15);
+  --grad-2: rgba(10, 132, 255, 0.1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+}
 
-## Live URL
-https://tickethelplfc.github.io/CreditTracker/
+[data-theme="light"] {
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --surface-2: #e5e5ea;
+  --surface-3: #d1d1d6;
+  --separator: #c6c6c8;
+  --text: #000000;
+  --text-secondary: #3c3c4399;
+  --text-tertiary: #3c3c434d;
+  --border: rgba(0,0,0,0.1);
+  --card-bg: #ffffff;
+  --bar-bg: rgba(255, 255, 255, 0.85);
+  --modal-bg: #ffffff;
+  --input-bg: #f2f2f7;
+  --shadow-card: 0 4px 12px rgba(0,0,0,0.05);
+  --grad-1: rgba(255, 45, 85, 0.05);
+  --grad-2: rgba(10, 132, 255, 0.05);
+}
 
-## Update process (mobile-friendly)
-1. Download the latest ZIP from ChatGPT
-2. Unzip on your phone
-3. Upload/overwrite these files in the repo root:
-   - index.html
-   - manifest.json
-   - sw.js
-   - icon.svg
-   - README.md (optional)
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-## Install
-- **Android:** Chrome → menu → Install app / Add to Home screen
-- **iPhone:** Safari → Share → Add to Home Screen
+body{
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  font-family: var(--font-main);
+  letter-spacing: -0.015em;
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: 0;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
 
-## Cache note
-After major updates, if you don’t see changes:
-- Remove the installed app
-- Clear site data for `tickethelplfc.github.io`
-- Reopen and reinstall
+body::before {
+  display: none;
+}
 
-## Account management
-Use the **Edit** and **Delete** buttons under the Account selector to rename an account and set AutoCup toggles, or remove an account.
+[hidden] { display: none !important; }
+
+/* Header */
+.topbar{
+  position: sticky; top: 0; z-index: 100;
+  height: calc(var(--header-height) + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
+  background: var(--bar-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+  gap: 10px;
+}
+.topbar.is-hidden { transform: translateY(-100%); }
+
+.topbarLeft { display: flex; align-items: center; gap: 12px; }
+.brandLogo { width: 32px; height: 32px; border-radius: 8px; }
+.topbarTitle { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+
+.topbarControls {
+  display: flex; align-items: center; gap: 8px;
+}
+.topSelect {
+  background: var(--surface-2); color: var(--text); border: none; border-radius: 8px;
+  padding: 6px 24px 6px 10px; font-size: 13px; font-weight: 600; appearance: none; height: 32px; max-width: 120px;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23888%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat; background-position: right 6px center; background-size: 8px auto;
+}
+.iconBtn {
+  background: transparent; border: none; padding: 6px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; color: var(--text); cursor: pointer;
+}
+.iconBtn svg { width: 20px; height: 20px; }
+
+@media all and (display-mode: standalone) {
+  #btnInstall {
+    display: none !important;
+  }
+}
+
+/* Container */
+.container{
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+/* Typography */
+.label { font-size: 24px; font-weight: 700; margin-bottom: 12px; display: block; color: var(--text); letter-spacing: -0.02em; }
+.label.withIcon { display: flex; align-items: center; gap: 6px; }
+.labelIcon { width: 18px; height: 18px; opacity: 0.7; }
+[data-theme="light"] .labelIcon { filter: invert(1); }
+.hint { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-top: 6px; }
+.fieldLabel { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; letter-spacing: 0.02em; margin-left: 4px; margin-top: 16px;}
+
+/* Cards */
+.card{
+  background: var(--surface);
+  border-radius: var(--radius-l);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: none;
+  box-shadow: var(--shadow-card);
+  animation: cardEntry 0.5s var(--ease-out) both;
+}
+.view > .card:nth-of-type(1) { animation-delay: 0ms; }
+.view > .card:nth-of-type(2) { animation-delay: 50ms; }
+.view > .card:nth-of-type(3) { animation-delay: 100ms; }
+.view > .card:nth-of-type(4) { animation-delay: 150ms; }
+
+@keyframes cardEntry {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Inputs */
+.input,.select,.textarea{
+  width:100%;
+  background: var(--input-bg);
+  border: 1px solid transparent;
+  border-radius: var(--radius-m);
+  padding: 14px 16px;
+  color:var(--text);
+  font-size: 16px;
+  font-size: 17px;
+  font-family: inherit;
+  appearance: none;
+  height: 50px;
+}
+.input:focus,.select:focus,.textarea:focus{
+  outline:none;
+  background: var(--surface-3);
+  border-color: rgba(255,255,255,0.1);
+}
+.select {
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23999%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px top 50%;
+  background-size: 10px auto;
+  padding-right: 30px;
+}
+
+/* Buttons */
+.btn{
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 14px 20px;
+  border-radius: 999px;
+  font-size: 16px; font-weight: 600;
+  border: none; cursor: pointer;
+  transition: opacity 0.2s;
+  background: var(--surface-2);
+  color: var(--text);
+  gap: 8px;
+  min-height: 52px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.btn:active { transform: scale(0.96); }
+.btn.primary { background: var(--primary-gradient); color: white; box-shadow: 0 8px 20px -4px rgba(244, 63, 94, 0.4); }
+.btn.success { background: var(--success); color: white; }
+.btn.danger { background: var(--surface-2); color: var(--danger); }
+.btn.ghost { background: transparent; color: var(--primary); }
+.btn.sm { padding: 8px 14px; font-size: 14px; }
+.btn.full { width: 100%; }
+.fileBtn { display: inline-flex; align-items: center; gap: 6px; }
+
+[data-theme="light"] .btn .icon img { filter: invert(1); }
+
+/* Bottom Nav */
+.bottomNav {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  width: min(92%, 400px);
+  background: rgba(28, 28, 30, 0.90);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 24px;
+  display: flex; justify-content: space-around; align-items: center;
+  padding: 0 10px;
+  height: 64px;
+  z-index: 900;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+.bottomTab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: none; border: none; padding: 4px 0 0 0;
+  color: var(--text-secondary); font-size: 10px; font-weight: 500; gap: 4px;
+  cursor: pointer;
+}
+.bottomTab.active { color: var(--primary); }
+.bottomTab img, .bottomTab svg { width: 24px; height: 24px; opacity: 0.5; transition: 0.2s; }
+.bottomTab.active img, .bottomTab.active svg { opacity: 1; filter: invert(38%) sepia(93%) saturate(3000%) hue-rotate(320deg) brightness(100%) contrast(100%); stroke: var(--primary); }
+[data-theme="light"] .bottomTab img { filter: invert(0.6); }
+[data-theme="light"] .bottomTab.active img { filter: invert(38%) sepia(93%) saturate(3000%) hue-rotate(320deg) brightness(100%) contrast(100%); }
+
+
+@media (min-width: 800px) {
+  .container { margin: 0 auto; max-width: 800px; padding-bottom: 100px; }
+}
+
+}
+.tabIcon{ width: 24px; height: 24px; filter: invert(0.5); transition: 0.2s; }
+.tab.active .tabIcon { filter: invert(38%) sepia(93%) saturate(3000%) hue-rotate(320deg) brightness(100%) contrast(100%); } /* Pink/Red Filter */
+.tab.active { color: var(--primary); }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+
+/* Lists & Items */
+.list { 
+  display: flex; flex-direction: column; 
+  background: var(--surface);
+  border-radius: var(--radius-l);
+  overflow: hidden;
+}
+.item{
+  background: var(--surface);
+  border-radius: 0;
+  padding: 18px;
+  border: none;
+  border-bottom: 1px solid var(--separator);
+  position: relative;
+  animation: itemEntry 0.4s var(--ease-out) both;
+}
+.item:last-child { border-bottom: none; }
+.item:active { background: var(--surface-2); transform: scale(0.98); }
+
+@keyframes itemEntry {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.list .item:nth-child(1) { animation-delay: 50ms; }
+.list .item:nth-child(2) { animation-delay: 100ms; }
+.list .item:nth-child(3) { animation-delay: 150ms; }
+.list .item:nth-child(4) { animation-delay: 200ms; }
+.list .item:nth-child(5) { animation-delay: 250ms; }
+.list .item:nth-child(n+6) { animation-delay: 300ms; }
+
+.itemTop { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.itemTitle { font-weight: 600; font-size: 18px; }
+.itemMeta { font-size: 13px; color: var(--text-secondary); }
+.itemCornerTags { margin-left: auto; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+/* Special styling for tracked fixtures in list */
+.item.fixtureTracked{
+  background: rgba(244, 63, 94, 0.08);
+}
+.item.fixtureTracked:active { background: rgba(244, 63, 94, 0.15); }
+
+/* Chips */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.chip{
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px; font-weight: 500;
+  cursor: pointer;
+}
+.chip.active { background: var(--primary); color: white; }
+.chip.active[data-credit="yes"] { background: var(--success); color: #000; }
+.chip.active[data-credit="no"] { background: var(--danger); }
+.chip.active[data-credit="unsure"] { background: #0a84ff; }
+.chip:active { transform: scale(0.95); }
+
+/* Badges */
+.itemBadges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.badge{
+  display: inline-block; padding: 4px 8px; border-radius: 6px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  background: var(--surface-2); color: var(--text-secondary);
+}
+.badge.good { background: rgba(48, 209, 88, 0.15); color: var(--success); }
+.badge.bad { background: rgba(255, 69, 58, 0.15); color: var(--danger); }
+.badge.attended-yes { background: rgba(255,255,255,0.1); color: #fff; }
+.badge.attended-no { background: rgba(255, 149, 0, 0.15); color: #ff9f0a; }
+
+/* Breakdown Table */
+.breakdownTable{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:12px;
+}
+.breakdownTable th{
+  color:var(--text-secondary);
+  font-size:12px;
+  text-align:left;
+  font-weight:600;
+  padding:8px 16px;
+  border-bottom: 1px solid var(--separator);
+}
+.breakdownTable td{
+  padding:14px 16px;
+  border-bottom: 1px solid var(--separator);
+  font-size: 14px;
+}
+.breakdownPill{
+  padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; background: var(--surface-2);
+}
+.breakdownPill.autocup { background: rgba(255, 214, 10, 0.15); color: #ffd60a; }
+
+/* Account bar layout (mobile-first) */
+.acctBar{ display: flex; flex-direction: column; gap: 16px; }
+.acctBarFields{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.acctBarActions{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.acctBarActions.persistent{ grid-template-columns: 1fr 1fr; }
+
+/* Settings modal (centered, fixed height + scroll) */
+dialog.modal{
+  border:none;
+  padding:0;
+  background: var(--modal-bg);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  color: var(--text);
+  border-radius: 24px;
+  width:min(560px, 94vw);
+  max-height:90vh;
+  overflow:hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,.5);
+  transform-origin: center center;
+}
+dialog.modal[open] {
+  animation: modalIn 0.4s var(--ease-spring) forwards;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+dialog.modal::backdrop{
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(5px);
+}
+.modalInner{
+  padding:20px;
+  max-height:90vh;
+  overflow-y:auto;
+  color: var(--text);
+}
+.modalHeader{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+.modalTitle{ font-weight:800; font-size:18px; }
+.hr{ height:1px; background: rgba(255,255,255,.08); margin:12px 0; border-radius:999px; }
+
+.formEmbedWrap{
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  overflow:hidden;
+  background: rgba(255,255,255,.02);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.20);
+}
+.formEmbed{
+  width:100%;
+  height:560px;
+  border:0;
+  display:block;
+  background:#fff; /* avoids dark flash behind the iframe */
+}
+
+/* iOS Switch */
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 8px 0;
+}
+.toggle input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 51px;
+  height: 31px;
+  background: #39393D;
+  border-radius: 15.5px;
+  position: relative;
+  transition: 0.3s;
+  outline: none;
+  flex-shrink: 0;
+}
+.toggle input::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 27px; height: 27px;
+  background: #fff;
+  border-radius: 50%;
+  transition: 0.3s;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+.toggle input:checked {
+  background: var(--success);
+}
+.toggle input:checked::after {
+  transform: translateX(20px);
+}
+.toggle span {
+  font-size: 17px;
+  color: var(--text);
+}
+
+/* Utilities */
+.row { display: flex; align-items: center; }
+.space-between { justify-content: space-between; }
+.gap { gap: 12px; }
+.wrap { flex-wrap: wrap; }
+.grow { flex: 1; }
+.hidden { display: none !important; }
+.empty { color: var(--text-secondary); padding: 30px; text-align: center; font-size: 15px; }
+
+/* Keep credit indicator tidy on long fixture names */
+.fixtureRow{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+}
+.creditPill{
+  flex-shrink:0;
+  white-space:nowrap;
+}
+/* Right-side H/A pill */
+.pill{
+  padding:6px 10px;
+  border-radius:999px;
+  background: var(--surface-2);
+  font-weight:900;
+  font-size:12px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:34px;
+}
+.fixtureLabels{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.pill.comp-pill{
+  font-weight:700;
+  font-size:11px;
+  padding:5px 8px;
+  min-width:auto;
+}
+.pill.comp-pill.comp-pl{border-color: rgba(155,89,182,.7); color: #d9c3f4; background: rgba(155,89,182,.12)}
+.pill.comp-pill.comp-ucl{border-color: rgba(52,152,219,.7); color: #b9dcf6; background: rgba(52,152,219,.15)}
+.pill.comp-pill.comp-lc{border-color: rgba(46,204,113,.7); color: #c9f2de; background: rgba(46,204,113,.12)}
+.pill.comp-pill.comp-fac{border-color: rgba(227,27,35,.7); color: #ffc2c5; background: rgba(227,27,35,.12)}
+.pill.comp-pill.comp-other{border-color: rgba(154,160,166,.45); color: var(--text); background: rgba(154,160,166,.10)}
+
+/* Only colour the H/A pill */
+.pill.ha-home{
+  background: rgba(244, 63, 94, 0.15);
+  color: var(--danger);
+  border: none;
+}
+
+.pill.ha-away{
+  background: rgba(48, 209, 88, 0.12);
+  color: var(--success);
+  border: none;
+}
+
+/* Ensure title wraps nicely without pushing credit */
+.fixtureTitle{
+  word-break:break-word;
+}
+
+.backupCard{
+  padding:10px;
+}
+.backupCard .label{
+  font-size:13px;
+}
+.backupCard .hint{
+  font-size:11px;
+}
+.backupCard .btn{
+  padding:8px 10px;
+  font-size:13px;
+  border-radius:12px;
+  white-space:nowrap;
+}
+.backupCard .icon{
+  width:16px;
+  height:16px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 14px;
+}
+
+.backupCard .row{
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  gap:8px;
+}
+.backupNudge{
+  margin-bottom:10px;
+}
+.backupNudge .label{
+  font-size:12px;
+  margin-bottom:4px;
+}
+.backupNudge .hint{
+  font-size:11px;
+}
+.dashHeader{
+  margin-bottom:10px;
+}
+.filtersGrid{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.filtersRow{
+  display:flex;
+  gap:10px;
+}
+.filtersRow.twoCol > *{
+  flex:1;
+  min-width:0;
+}
+.filtersRow.threeCol > *{
+  flex:1;
+  min-width:0;
+}
+.infoPage{
+  font-size:16px;
+  line-height:1.6;
+}
+.infoPage h1{
+  font-size:24px;
+  font-weight:800;
+  margin:0 0 14px;
+}
+.infoPage h2{
+  font-size:18px;
+  font-weight:700;
+  margin:18px 0 0;
+}
+.inlineFields{
+  display:flex;
+  gap:10px;
+  flex-wrap:nowrap;
+  align-items:flex-start;
+}
+.inlineFields > div{
+  flex:1;
+  min-width:0;
+}
+
+/* Specific overrides for Settings List */
+.settingsSection .item {
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* Selects in sidebar */
+.selectGhost { appearance: none; -webkit-appearance: none; background: transparent; border: none; color: var(--primary); font-size: 17px; text-align: right; padding: 0; margin: 0; width: auto; min-width: 100px; direction: rtl; }
+.selectGhost:focus { outline: none; background: transparent; box-shadow: none; }
+.selectGhost option { direction: ltr; color: #000; }
+
+.sidebarSelect {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 24px 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23888%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 8px auto;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 40px;
+}
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbarLeft">
+      <img class="brandLogo" src="icon.svg" alt="LFC Tools" />
+      <div class="topbarTitle">LFC Tools</div>
+    </div>
+    <div class="topbarControls">
+      <select id="topbarAccountSelect" class="topSelect"></select>
+      <select id="topbarSeasonSelect" class="topSelect"></select>
+      <button id="btnThemeToggleTop" class="iconBtn" aria-label="Theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </button>
+      <button id="btnSupportTop" class="iconBtn" aria-label="Support">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Setup (no popup) -->
+    <section id="viewSetup" class="view hidden">
+      <section class="card">
+        <div class="label">Add account details below</div>
+        <div class="hint">Set up the accounts you want to track. Include AutoCup and season, then click save.</div>
+      </section>
+
+      <section class="card">
+        <div class="label withIcon">
+          <img class="labelIcon" src="icons/assets/account.svg" alt="" aria-hidden="true" />
+          Accounts
+        </div>
+         <div class="inlineFields">
+          <div>
+            <div class="fieldLabel">Add mode</div>
+            <select id="setupMode" class="select">
+              <option value="new">New account</option>
+              <option value="existing">Existing account</option>
+            </select>
+          </div>
+          <div>
+            <div class="fieldLabel">Season</div>
+            <select id="setupSeason" class="select" data-role="season"></select>
+          </div>
+        </div>
+
+        <div id="setupNewAccountFields">
+          <div class="inlineFields" style="margin-top:10px;">
+            <div>
+              <div class="fieldLabel">How many accounts?</div>
+              <input id="setupCount" class="input" type="number" min="1" max="10" value="1" />
+            </div>
+          </div>
+         
+          <div class="hint" style="margin-top:10px;">Enter names below. AutoCup is saved per account *and per season*.</div>
+          <div id="setupNames" class="list" style="margin-top:10px;"></div>
+        </div>
+
+        <div id="setupExistingAccountFields" class="hidden" style="margin-top:10px;">
+          <div class="fieldLabel">Choose existing account</div>
+          <select id="setupExistingAccount" class="select"></select>
+        
+          <div class="list" style="margin-top: 16px;">
+            <label class="toggle">
+              <span>League Cup</span>
+              <input type="checkbox" id="setupExistingLC" />
+            </label>
+            <label class="toggle">
+              <span>FA Cup</span>
+              <input type="checkbox" id="setupExistingFAC" />
+            </label>
+            <label class="toggle">
+              <span>Champions League</span>
+              <input type="checkbox" id="setupExistingUCL" />
+            </label>
+          </div>
+          <div class="hint" style="margin-top:8px;">This adds a new season for the selected account.</div>
+        </div>
+
+        <div class="row gap wrap" style="margin-top:14px;">
+          <button id="btnSetupCreate" class="btn primary">Save Account</button>
+        </div>
+      </section>
+    </section>
+
+    <!-- Dashboard -->
+    <section id="viewDash" class="view">
+      <div class="dashHeader">
+        <div class="label withIcon">
+          <img class="labelIcon" src="icons/assets/dashboard.svg" alt="" aria-hidden="true" />
+          Dashboard
+        </div>
+      </div>
+
+      <!-- Per-competition credits first -->
+      <section class="card">
+        <div class="row space-between">
+          <div>
+            <div class="label">Credits by Competition</div>
+            <div class="hint">Home (H) & Away (A) tracked separately</div>
+          </div>
+        </div>
+        <div id="compBreakdown" class="breakdown"></div>
+      </section>
+
+      <section class="card">
+        <div class="row space-between">
+          <div>
+            <div class="label">Attendance by Competition</div>
+            <div class="hint">Attended matches split by home/away, with season total</div>
+          </div>
+        </div>
+        <div id="attendanceBreakdown" class="breakdown"></div>
+      </section>
+
+      <section class="card">
+        <div class="label">Recent Activity</div>
+        <div id="recentList" class="list"></div>
+      </section>
+    </section>
+
+    <!-- Credits Checklist -->
+    <section id="viewCredits" class="view hidden">
+      <div class="dashHeader">
+        <div class="label withIcon">
+          <img class="labelIcon" src="icons/assets/matches.svg" alt="" aria-hidden="true" />
+          Credits Checklist
+        </div>
+      </div>
+      <section class="card">
+        <div class="hint">All fixtures for this season and your credit status.</div>
+        <div class="row gap wrap" style="margin-top:12px;">
+          <select id="creditsFilterComp" class="select grow">
+            <option value="">All Competitions</option>
+            <option value="PL">Premier League</option>
+            <option value="UCL">Champions League</option>
+            <option value="FAC">FA Cup</option>
+            <option value="LC">League Cup</option>
+            <option value="OTHER">Other</option>
+          </select>
+          <select id="creditsFilterHA" class="select grow">
+            <option value="">All Venues</option>
+            <option value="H">Home</option>
+            <option value="A">Away</option>
+          </select>
+        </div>
+        <div id="creditsChecklist" class="list" style="margin-top:12px;"></div>
+        <div id="creditsTotal" class="hint" style="text-align:center; margin-top:12px; font-weight:bold;"></div>
+      </section>
+    </section>
+
+    <!-- Matches -->
+    <section id="viewMatches" class="view hidden">
+      <section class="card">
+        <div class="row space-between">
+          <div>
+            <div class="label withIcon">
+              <img class="labelIcon" src="icons/assets/matches.svg" alt="" aria-hidden="true" />
+              My Matches
+            </div>
+            <div class="hint">Search, sort, and filter all saved matches.</div>
+          </div>
+        </div>
+
+        <div class="row wrap gap" style="margin-top:12px;">
+          <input id="searchInput" class="input grow" placeholder="Search opponent / notes…" />
+        </div>
+
+        <div class="filtersGrid" style="margin-top:12px;">
+          <div class="filtersRow twoCol">
+            <select id="matchSort" class="select">
+              <option value="matchDate" selected>Sort: Match date</option>
+              <option value="dateAdded">Sort: Date added</option>
+            </select>
+            <select id="filterVenue" class="select">
+              <option value="">Venue: All</option>
+              <option value="H">Home (H)</option>
+              <option value="A">Away (A)</option>
+            </select>
+          </div>
+          <div class="filtersRow threeCol">
+            <select id="filterComp" class="select">
+              <option value="">Comp: All</option>
+              <option value="PL">PL</option>
+              <option value="UCL">UCL</option>
+              <option value="FAC">FA Cup</option>
+              <option value="LC">League Cup</option>
+              <option value="OTHER">Other</option>
+            </select>
+            <select id="filterCredit" class="select">
+              <option value="">Credit: All</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+              <option value="unsure">Unsure</option>
+            </select>
+            <select id="filterAttended" class="select">
+              <option value="">Attended: All</option>
+              <option value="yes">Attended</option>
+              <option value="no">Not attended</option>
+            </select>
+          </div>
+        </div>
+      </section>
+      <section class="card">
+        <div id="matchesList" class="list"></div>
+        <div id="matchesEmpty" class="empty hidden">
+          No matches yet — tap <strong>Add</strong> to start tracking.
+        </div>
+      </section>
+    </section>
+
+    <!-- Add/Edit -->
+    <section id="viewAdd" class="view hidden">
+      <section class="card">
+        <div class="row space-between">
+          <div class="label withIcon">
+            <img class="labelIcon" src="icons/assets/add.svg" alt="" aria-hidden="true" />
+            Add / Edit match
+          </div>
+          <button id="btnCancelAdd" class="btn ghost">Cancel</button>
+        </div>
+
+        <form id="matchForm" class="form">
+          <input type="hidden" id="matchId" />
+
+          <div class="grid2">
+            <div>
+              <div class="fieldLabel">Opponent</div>
+              <input id="opponent" class="input" placeholder="e.g. Arsenal" required />
+            </div>
+            <div>
+              <div class="fieldLabel">Date</div>
+              <input id="matchDate" class="input" type="date" required />
+            </div>
+
+            <div>
+              <div class="fieldLabel">Home/Away</div>
+              <div class="chips" role="group" aria-label="Home or Away">
+                <input type="hidden" id="venue" value="H" />
+                <button type="button" class="chip ha-chip" data-ha="H">Home (H)</button>
+                <button type="button" class="chip ha-chip" data-ha="A">Away (A)</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="fieldLabel">Competition</div>
+              <div class="chips" role="group" aria-label="Competition">
+                <input type="hidden" id="competition" value="PL" />
+                <button type="button" class="chip comp-chip comp-pl" data-comp="PL">PL</button>
+                <button type="button" class="chip comp-chip comp-ucl" data-comp="UCL">UCL</button>
+                <button type="button" class="chip comp-chip comp-fac" data-comp="FAC">FA Cup</button>
+                <button type="button" class="chip comp-chip comp-lc" data-comp="LC">League Cup</button>
+                <button type="button" class="chip comp-chip comp-other" data-comp="OTHER">Other</button>
+              </div>
+            </div>
+          </div>
+
+          <input type="hidden" id="ticketAction" value="credit" />
+
+          <div>
+            <div class="fieldLabel">Credit outcome</div>
+            <div class="chips" role="group" aria-label="Credit outcome">
+              <input type="hidden" id="creditCredit" value="unsure" />
+              <button type="button" class="chip" data-credit="yes">Credit</button>
+              <button type="button" class="chip" data-credit="no">No credit</button>
+              <button type="button" class="chip active" data-credit="unsure">Unsure</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="fieldLabel">Attended</div>
+            <div class="chips" role="group" aria-label="Attended">
+              <input type="hidden" id="attended" value="yes" />
+              <button type="button" class="chip" data-attended="yes">Attended</button>
+              <button type="button" class="chip" data-attended="no">Not attended</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="fieldLabel">Ticket cost (optional)</div>
+            <input id="amountPaid" class="input" type="number" min="0" step="0.01" placeholder="e.g. 43.85" />
+            <div class="hint">Leave blank if unknown. Stored locally.</div>
+          </div>
+
+          <div>
+            <div class="fieldLabel withIcon">
+              <img class="labelIcon" src="icons/assets/note.svg" alt="" aria-hidden="true" />
+              Notes (optional)
+            </div>
+            <textarea id="notes" class="textarea" rows="3" placeholder="Anything worth remembering…"></textarea>
+          </div>
+
+          <div class="row space-between">
+            <button type="submit" class="btn success">Save match</button>
+            <button type="button" id="btnDelete" class="btn danger" hidden>Delete</button>
+          </div>
+
+          <div class="hint">
+          </div>
+        </form>
+      </section>
+    </section>
+
+    <!-- Settings modal -->
+
+
+    <!-- Fixtures -->
+    <section id="viewFixtures" class="view hidden">
+      <section class="card">
+        <div class="row space-between">
+          <div>
+            <div class="label withIcon">
+              <img class="labelIcon" src="icons/assets/fixtures.svg" alt="" aria-hidden="true" />
+              Fixtures
+            </div>
+            <div class="hint">Tap a fixture to pre-fill the Add screen.</div>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div>
+            <div class="fieldLabel">Show</div>
+            <select id="fixtureShow" class="select">
+              <option value="upcoming" selected>Upcoming</option>
+              <option value="past">Past</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+          <div>
+            <div class="fieldLabel">Filter</div>
+            <div class="row gap wrap">
+              <select id="fixtureComp" class="select grow">
+                <option value="" selected>All competitions</option>
+                <option value="PL">PL</option>
+                <option value="UCL">UCL</option>
+                <option value="FAC">FA Cup</option>
+                <option value="LC">League Cup</option>
+                <option value="OTHER">Other</option>
+              </select>
+              <select id="fixtureHA" class="select grow">
+                <option value="" selected>All Venues</option>
+                <option value="H">Home</option>
+                <option value="A">Away</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="hint" id="fixturesCount" style="margin-top:10px;"></div>
+        <div id="fixturesList" class="list" style="margin-top:12px;"></div>
+        <div id="fixturesEmpty" class="hint hidden" style="margin-top:12px;">No fixtures found.</div>
+
+<div class="row gap wrap" style="margin-top:14px;">
+  <button id="btnReloadFixtures" class="btn ghost sm">Refresh</button>
+  <button id="btnFixturesAddManual" class="btn ghost sm">Add Manual Match</button>
+  <label class="btn ghost fileBtn sm">
+    <span class="btnIcon"><img src="icons/assets/import.svg" alt="" aria-hidden="true" /></span>
+    Import ICS
+    <input id="importFixturesFile" type="file" accept=".ics,text/calendar" hidden />
+  </label>
+  <button id="btnClearFixtures" class="btn ghost sm">Clear imported</button>
+</div>
+      
+      </section>
+    </section>
+
+    <!-- Settings -->
+    <section id="viewSettings" class="view hidden">
+      <div class="dashHeader" style="padding-left: 16px;">
+        <div class="label withIcon">
+          <img class="labelIcon" src="icons/assets/account.svg" alt="" aria-hidden="true" />
+          Profile Settings
+        </div>
+      </div>
+
+      <section class="card settingsSection">
+        <div class="fieldLabel" style="margin-left:16px; margin-top:0;">Account & Season</div>
+        <div class="list">
+          <div class="item">
+            <div class="row space-between" style="width:100%">
+              <div class="itemTitle">Account</div>
+              <select id="accountSelect" class="selectGhost"></select>
+            </div>
+          </div>
+          <div class="item">
+            <div class="row space-between" style="width:100%">
+              <div class="itemTitle">Season</div>
+              <select id="seasonSelect" class="selectGhost" data-role="season"></select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="list" style="margin-top:20px;">
+           <button id="btnAddAccount" class="item clickable" style="color:var(--primary); text-align:center; width:100%; justify-content:center;">Add Account</button>
+           <button id="btnEditAccount" class="item clickable" style="color:var(--primary); text-align:center; width:100%; justify-content:center;">Edit Current Account</button>
+           <button id="btnDeleteAccount" class="item clickable" style="color:var(--danger); text-align:center; width:100%; justify-content:center;">Delete Current Account</button>
+        </div>
+      </section>
+
+      <section class="card settingsSection backupCard" id="backupCard">
+        <div class="label withIcon" style="font-size: 17px;">
+          <img class="labelIcon" src="icons/assets/backup.svg" alt="" aria-hidden="true" />
+          Data & Backup
+        </div>
+        <div id="backupNudge" class="item backupNudge hidden" role="status" aria-live="polite">
+          <div class="label">Backup reminder</div>
+          <div id="backupNudgeMessage" class="hint"></div>
+          <div class="row gap wrap backupNudgeActions">
+            <button id="btnBackupNudgeNow" class="btn primary sm">Backup now</button>
+            <button id="btnBackupNudgeLater" class="btn ghost sm">Later</button>
+          </div>
+        </div>
+        <div class="backupActions">
+          <button id="btnExportJSON" class="btn"><span class="icon"><img src="icons/assets/export.svg" alt="" aria-hidden="true" /></span> Export JSON</button>
+          <button id="btnExportCSV" class="btn"><span class="icon"><img src="icons/assets/export.svg" alt="" aria-hidden="true" /></span> Export CSV</button>
+          <label class="btn fileBtn">
+            <span class="icon"><img src="icons/assets/import.svg" alt="" aria-hidden="true" /></span> Import JSON
+            <input id="importFile" type="file" accept="application/json" hidden />
+          </label>
+        </div>
+        <div class="hint">“JSON” is best for restoring exactly. “CSV” is for spreadsheets.</div>
+      </section>
+
+      <section class="card settingsSection">
+        <div class="fieldLabel" style="margin-left:0; margin-top:0;">App Info</div>
+        <div class="list">
+          <button id="btnInfo" class="item clickable" style="text-align:left; width:100%; color:var(--text);">
+            <div class="itemTitle">How to use</div>
+            <div class="hint" style="font-size: 16px; color: #666;">›</div>
+          </button>
+          <button id="btnSupport" class="item clickable" style="text-align:left; width:100%; color:var(--text);">
+            <div class="itemTitle">Support & Feedback</div>
+            <div class="hint" style="font-size: 16px; color: #666;">›</div>
+          </button>
+          <button id="btnThemeToggleSettings" class="item clickable" style="text-align:left; width:100%; color:var(--text);">
+            <div class="row space-between">
+              <div class="itemTitle">Theme</div>
+              <div class="hint" id="themeLabel">Auto</div>
+            </div>
+          </button>
+        </div>
+      </section>
+    </section>
+
+    <!-- Info -->
+    <section id="infoPage" class="view hidden infoPage">
+      <h1>How to Use the Credit Tracker</h1>
+
+      <h2>Adding an Account</h2>
+      <ul>
+        <li>Tap the <strong>Add Account</strong> button on the dashboard screen.</li>
+        <li>Enter your account name(e.g., Main, Dad, Partner, Friend).</li>
+        <li>Choose the season and autocup details (Season, Cup, AutoCup etc.).</li>
+        <li>Save to start tracking fixtures for that account.</li>
+      </ul>
+
+      <h2>Exporting Your Data</h2>
+      <ul>
+        <li>Go to <strong>Dashboard</strong> → <strong>Scroll down to Backup & Export</strong>.</li>
+        <li>Tap <strong>Export</strong> to download a .json file containing your accounts, credits and saved fixtures.</li>
+        <li>Keep this file safe – you’ll need it if you change phone or reinstall the app.</li>
+      </ul>
+
+      <h2>Importing Data</h2>
+      <ul>
+      <li>Go to <strong>Dashboard</strong> → <strong>Scroll down to Backup & Export</strong>.</li>
+        <li>Select <strong>Import</strong> and choose a previously exported .json file.</li>
+        <li>Your accounts and fixtures will be restored instantly.</li>
+      </ul>
+
+      <h2>Using the Matches Screen</h2>
+      <ul>
+        <li>View every match you have added across your accounts.</li>
+        <li>Search by opponent or notes using the search bar.</li>
+        <li>Sort by <strong>Match Date</strong> or <strong>Date Added</strong>.</li>
+        <li>Filter by venue (H/A), competition (PL/UCL/FAC/LC), or credit type.</li>
+      </ul>
+
+      <h2>Using the Fixtures Tab</h2>
+      <ul>
+        <li>Shows past & upcoming Liverpool fixtures for the selected season.</li>
+        <li>Tap any match to add it instantly to one of your accounts.</li>
+        <li>Fixtures automatically update when new dates are announced.</li>
+      </ul>
+
+      <h2>The Add Button</h2>
+      <ul>
+        <li>Tap the <strong>+</strong> button to manually add a match to an account.</li>
+        <li>Select opponent, date, venue, competition and credit type.</li>
+        <li>Ideal for historic matches or adding missing games.</li>
+      </ul>
+
+      <p>Built for Liverpool supporters. Completely free. YNWA.</p>
+    </section>
+
+<!-- Support & Feedback -->
+<dialog id="supportModal" class="modal hidden">
+  <div class="modalInner">
+    <div class="modalHeader">
+      <div class="modalTitle">Support & Feedback</div>
+      <button type="button" class="btn ghost sm" id="btnCloseSupport" aria-label="Close">Close</button>
+    </div>
+
+    <div class="hr"></div>
+
+    <h3 style="margin:0 0 6px;">Support the tools</h3>
+    <div class="hint" style="margin-bottom:10px;">
+      Built to help the community and kept free for everyone.
+      Optional support helps with hosting + new features. Thank you.
+    </div>
+    <button type="button" id="btnBmac" class="btn full">Support the Tools 🍺</button>
+
+    <div class="hr" style="margin-top:24px;"></div>
+
+    <h3 style="margin:16px 0 6px;">Send feedback</h3>
+    <div class="hint" style="margin-bottom:10px;">
+      Fill this in and it’ll send straight to me via Google Forms.
+    </div>
+
+    
+<button id="btnToggleFeedback" class="toggleRow">
+  <span>Give feedback</span>
+  <span id="feedbackArrow">▸</span>
+</button>
+    
+
+<div id="feedbackPanel" class="feedbackPanel hidden">
+<div class="formEmbedWrap">
+      <iframe
+        id="feedbackFormFrame"
+        class="formEmbed"
+        src="https://docs.google.com/forms/d/e/1FAIpQLSeUg49KmDd8WaU9DYGaFpkVgHW93r6HUKsVVSVyGS9acRCrYw/viewform?embedded=true"
+        frameborder="0"
+        marginheight="0"
+        marginwidth="0"
+        loading="lazy"
+      >Loading…</iframe>
+    </div>
+</div>
+  </div>
+</dialog>
+
+<!-- Account settings -->
+<dialog id="accountSettingsModal" class="modal hidden">
+  <div class="modalInner">
+    <div class="modalHeader">
+      <div class="modalTitle">Account Settings</div>
+      <button type="button" class="btn ghost sm" id="btnCloseAccountSettings" aria-label="Close">Close</button>
+    </div>
+    <div class="hr"></div>
+    <div class="fieldLabel">Account name</div>
+    <input id="accountNameInput" class="input" placeholder="Account name" />
+    <div class="row gap wrap" style="margin-top:14px;">
+      <button type="button" class="btn primary" id="btnSaveAccountSettings">Save</button>
+      <button type="button" class="btn ghost" id="btnCancelAccountSettings">Cancel</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="fixturesSeasonRefreshModal" class="modal hidden">
+  <div class="modalInner">
+    <div class="modalHeader">
+      <div class="modalTitle">Fixtures update</div>
+    </div>
+    <div class="hr"></div>
+    <div class="label" id="fixturesSeasonRefreshQuestion">Fixtures will now update</div>
+    <div class="row gap wrap" style="margin-top:14px;">
+      <button type="button" class="btn primary" id="btnFixturesSeasonRefreshOk">OK</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="autoCupModal" class="modal hidden">
+  <div class="modalInner">
+    <div class="modalHeader">
+      <div class="modalTitle" id="autoCupTitle">AutoCup</div>
+      <button type="button" class="btn ghost sm" id="btnCloseAutoCup" aria-label="Close">Close</button>
+    </div>
+    <div class="hr"></div>
+    <div class="label" id="autoCupQuestion">AutoCup option</div>
+    <div class="hint" id="autoCupSeason">Season</div>
+    <div class="row gap wrap" style="margin-top:14px;">
+      <button type="button" class="btn primary" id="btnAutoCupYes">Yes</button>
+      <button type="button" class="btn" id="btnAutoCupNo">No</button>
+      <button type="button" class="btn ghost" id="btnAutoCupCancel">Cancel</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="deleteAccountModal" class="modal hidden">
+  <div class="modalInner">
+    <div class="modalHeader">
+      <div class="modalTitle">Delete options</div>
+      <button type="button" class="btn ghost sm" id="btnCloseDeleteAccount" aria-label="Close">Close</button>
+    </div>
+    <div class="hr"></div>
+    <div class="label" id="deleteAccountQuestion">Delete account or season?</div>
+    <div class="hint" id="deleteAccountSeason">Season</div>
+    <div class="row gap wrap" style="margin-top:14px;">
+      <button type="button" class="btn danger" id="btnDeleteAccountConfirm">Account</button>
+      <button type="button" class="btn" id="btnDeleteSeasonConfirm">Season</button>
+      <button type="button" class="btn ghost" id="btnDeleteAccountCancel">Cancel</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Account Switcher Modal -->
+<dialog id="accountSwitcherModal" class="modal hidden">
+  <div class="modalInner">
+    <div class="modalHeader">
+      <div class="modalTitle">Switch Account</div>
+      <button type="button" class="btn ghost sm" id="btnCloseAccountSwitcher" aria-label="Close">Close</button>
+    </div>
+    <div class="list" id="accountSwitcherList"></div>
+  </div>
+</dialog>
+</main>
+
+  <nav class="bottomNav">
+    <button class="bottomTab active" data-view="dash">
+      <img src="icons/assets/dashboard.svg" alt="" />
+      <span>Dash</span>
+    </button>
+    <button class="bottomTab" data-view="credits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <span>Checklist</span>
+    </button>
+    <button class="bottomTab" data-view="matches">
+      <img src="icons/assets/matches.svg" alt="" />
+      <span>Matches</span>
+    </button>
+    <button class="bottomTab" data-view="fixtures">
+      <img src="icons/assets/fixtures.svg" alt="" />
+      <span>Fixtures</span>
+    </button>
+    <button class="bottomTab" data-view="settings">
+      <img src="icons/assets/account.svg" alt="" />
+      <span>Profile</span>
+    </button>
+  </nav>
+
+  <div class="hint" style="text-align:center;margin:20px 0;">Powered by LFC Tools</div>
+
+<script type="application/json" id="fixturesData">[{"id":"2025-08-10-other-crystalpalace-a-1500","season":"25/26","date":"2025-08-10","time":"15:00","datetime_utc":"2025-08-10T15:00:00Z","competition":"OTHER","opponent":"Crystal Palace","venue":"A","location":""},{"id":"2025-08-15-pl-bournemouth-h-2000","season":"25/26","date":"2025-08-15","time":"20:00","datetime_utc":"2025-08-15T20:00:00Z","competition":"PL","opponent":"Bournemouth","venue":"H","location":""},{"id":"2025-08-25-pl-newcastleunited-a-2000","season":"25/26","date":"2025-08-25","time":"20:00","datetime_utc":"2025-08-25T20:00:00Z","competition":"PL","opponent":"Newcastle United","venue":"A","location":""},{"id":"2025-08-31-pl-arsenal-h-1630","season":"25/26","date":"2025-08-31","time":"16:30","datetime_utc":"2025-08-31T16:30:00Z","competition":"PL","opponent":"Arsenal","venue":"H","location":""},{"id":"2025-09-14-pl-burnley-a-1400","season":"25/26","date":"2025-09-14","time":"14:00","datetime_utc":"2025-09-14T14:00:00Z","competition":"PL","opponent":"Burnley","venue":"A","location":""},{"id":"2025-09-17-ucl-atleticomadrid-h-2000","season":"25/26","date":"2025-09-17","time":"20:00","datetime_utc":"2025-09-17T20:00:00Z","competition":"UCL","opponent":"Atletico Madrid","venue":"H","location":""},{"id":"2025-09-20-pl-everton-h-1230","season":"25/26","date":"2025-09-20","time":"12:30","datetime_utc":"2025-09-20T12:30:00Z","competition":"PL","opponent":"Everton","venue":"H","location":""},{"id":"2025-09-23-lc-southampton-h-2000","season":"25/26","date":"2025-09-23","time":"20:00","datetime_utc":"2025-09-23T20:00:00Z","competition":"LC","opponent":"Southampton","venue":"H","location":""},{"id":"2025-09-27-pl-crystalpalace-a-1500","season":"25/26","date":"2025-09-27","time":"15:00","datetime_utc":"2025-09-27T15:00:00Z","competition":"PL","opponent":"Crystal Palace","venue":"A","location":""},{"id":"2025-09-30-ucl-galatasaray-a-2000","season":"25/26","date":"2025-09-30","time":"20:00","datetime_utc":"2025-09-30T20:00:00Z","competition":"UCL","opponent":"Galatasaray","venue":"A","location":""},{"id":"2025-10-04-pl-chelsea-a-1730","season":"25/26","date":"2025-10-04","time":"17:30","datetime_utc":"2025-10-04T17:30:00Z","competition":"PL","opponent":"Chelsea","venue":"A","location":""},{"id":"2025-10-19-pl-manchesterunited-h-1630","season":"25/26","date":"2025-10-19","time":"16:30","datetime_utc":"2025-10-19T16:30:00Z","competition":"PL","opponent":"Manchester United","venue":"H","location":""},{"id":"2025-10-22-ucl-eintrachtfrankfurt-a-2000","season":"25/26","date":"2025-10-22","time":"20:00","datetime_utc":"2025-10-22T20:00:00Z","competition":"UCL","opponent":"Eintracht Frankfurt","venue":"A","location":""},{"id":"2025-10-25-pl-brentford-a-2000","season":"25/26","date":"2025-10-25","time":"20:00","datetime_utc":"2025-10-25T20:00:00Z","competition":"PL","opponent":"Brentford","venue":"A","location":""},{"id":"2025-10-29-lc-crystalpalace-h-1945","season":"25/26","date":"2025-10-29","time":"19:45","datetime_utc":"2025-10-29T19:45:00Z","competition":"LC","opponent":"Crystal Palace","venue":"H","location":""},{"id":"2025-11-01-pl-astonvilla-h-2000","season":"25/26","date":"2025-11-01","time":"20:00","datetime_utc":"2025-11-01T20:00:00Z","competition":"PL","opponent":"Aston Villa","venue":"H","location":""},{"id":"2025-11-04-ucl-realmadrid-h-2000","season":"25/26","date":"2025-11-04","time":"20:00","datetime_utc":"2025-11-04T20:00:00Z","competition":"UCL","opponent":"Real Madrid","venue":"H","location":""},{"id":"2025-11-09-pl-manchestercity-a-1630","season":"25/26","date":"2025-11-09","time":"16:30","datetime_utc":"2025-11-09T16:30:00Z","competition":"PL","opponent":"Manchester City","venue":"A","location":""},{"id":"2025-11-22-pl-nottinghamforest-h-1500","season":"25/26","date":"2025-11-22","time":"15:00","datetime_utc":"2025-11-22T15:00:00Z","competition":"PL","opponent":"Nottingham Forest","venue":"H","location":""},{"id":"2025-11-26-ucl-psveindhoven-h-2000","season":"25/26","date":"2025-11-26","time":"20:00","datetime_utc":"2025-11-26T20:00:00Z","competition":"UCL","opponent":"PSV Eindhoven","venue":"H","location":""},{"id":"2025-11-30-pl-westhamunited-a-1405","season":"25/26","date":"2025-11-30","time":"14:05","datetime_utc":"2025-11-30T14:05:00Z","competition":"PL","opponent":"West Ham United","venue":"A","location":""},{"id":"2025-12-03-pl-sunderland-h-2015","season":"25/26","date":"2025-12-03","time":"20:15","datetime_utc":"2025-12-03T20:15:00Z","competition":"PL","opponent":"Sunderland","venue":"H","location":""},{"id":"2025-12-06-pl-leedsunited-a-1730","season":"25/26","date":"2025-12-06","time":"17:30","datetime_utc":"2025-12-06T17:30:00Z","competition":"PL","opponent":"Leeds United","venue":"A","location":""},{"id":"2025-12-09-ucl-intermilan-a-2000","season":"25/26","date":"2025-12-09","time":"20:00","datetime_utc":"2025-12-09T20:00:00Z","competition":"UCL","opponent":"Inter Milan","venue":"A","location":""},{"id":"2025-12-13-pl-brighton-h-1500","season":"25/26","date":"2025-12-13","time":"15:00","datetime_utc":"2025-12-13T15:00:00Z","competition":"PL","opponent":"Brighton","venue":"H","location":""},{"id":"2025-12-20-pl-tottenhamhotspur-a-1730","season":"25/26","date":"2025-12-20","time":"17:30","datetime_utc":"2025-12-20T17:30:00Z","competition":"PL","opponent":"Tottenham Hotspur","venue":"A","location":""},{"id":"2025-12-27-pl-wolves-h-1500","season":"25/26","date":"2025-12-27","time":"15:00","datetime_utc":"2025-12-27T15:00:00Z","competition":"PL","opponent":"Wolves","venue":"H","location":""},{"id":"2026-01-01-pl-leedsunited-h-1730","season":"25/26","date":"2026-01-01","time":"17:30","datetime_utc":"2026-01-01T17:30:00Z","competition":"PL","opponent":"Leeds United","venue":"H","location":""},{"id":"2026-01-04-pl-fulham-a-1500","season":"25/26","date":"2026-01-04","time":"15:00","datetime_utc":"2026-01-04T15:00:00Z","competition":"PL","opponent":"Fulham","venue":"A","location":""},{"id":"2026-01-08-pl-arsenal-a-2000","season":"25/26","date":"2026-01-08","time":"20:00","datetime_utc":"2026-01-08T20:00:00Z","competition":"PL","opponent":"Arsenal","venue":"A","location":""},{"id":"2026-01-12-fa-barnsley-h-1945","season":"25/26","date":"2026-01-12","time":"19:45","datetime_utc":"2026-01-12T19:45:00Z","competition":"FAC","opponent":"Barnsley","venue":"H","location":""},{"id":"2026-01-17-pl-burnley-h-1500","season":"25/26","date":"2026-01-17","time":"15:00","datetime_utc":"2026-01-17T15:00:00Z","competition":"PL","opponent":"Burnley","venue":"H","location":""},{"id":"2026-01-21-ucl-marseille-a-2000","season":"25/26","date":"2026-01-21","time":"20:00","datetime_utc":"2026-01-21T20:00:00Z","competition":"UCL","opponent":"Marseille","venue":"A","location":""},{"id":"2026-01-24-pl-bournemouth-a-1730","season":"25/26","date":"2026-01-24","time":"17:30","datetime_utc":"2026-01-24T17:30:00Z","competition":"PL","opponent":"Bournemouth","venue":"A","location":""},{"id":"2026-01-28-ucl-qarabagfk-h-2000","season":"25/26","date":"2026-01-28","time":"20:00","datetime_utc":"2026-01-28T20:00:00Z","competition":"UCL","opponent":"Qarabag FK","venue":"H","location":""},{"id":"2026-01-31-pl-newcastleunited-h-2000","season":"25/26","date":"2026-01-31","time":"20:00","datetime_utc":"2026-01-31T20:00:00Z","competition":"PL","opponent":"Newcastle United","venue":"H","location":""},{"id":"2026-02-08-pl-manchestercity-h-1630","season":"25/26","date":"2026-02-08","time":"16:30","datetime_utc":"2026-02-08T16:30:00Z","competition":"PL","opponent":"Manchester City","venue":"H","location":""},{"id":"2026-02-11-pl-sunderland-a-2015","season":"25/26","date":"2026-02-11","time":"20:15","datetime_utc":"2026-02-11T20:15:00Z","competition":"PL","opponent":"Sunderland","venue":"A","location":""},{"id":"2026-02-14-fa-brighton-h-2000","season":"25/26","date":"2026-02-14","time":"20:00","datetime_utc":"2026-02-14T20:00:00Z","competition":"FAC","opponent":"Brighton","venue":"H","location":""},{"id":"2026-02-21-pl-nottinghamforest-a-1500","season":"25/26","date":"2026-02-21","time":"15:00","datetime_utc":"2026-02-21T15:00:00Z","competition":"PL","opponent":"Nottingham Forest","venue":"A","location":""},{"id":"2026-02-28-pl-westhamunited-h-1500","season":"25/26","date":"2026-02-28","time":"15:00","datetime_utc":"2026-02-28T15:00:00Z","competition":"PL","opponent":"West Ham United","venue":"H","location":""},{"id":"2026-03-04-pl-wolves-a-2000","season":"25/26","date":"2026-03-04","time":"20:00","datetime_utc":"2026-03-04T20:00:00Z","competition":"PL","opponent":"Wolves","venue":"A","location":""},{"id":"2026-03-14-pl-tottenhamhotspur-h-1500","season":"25/26","date":"2026-03-14","time":"15:00","datetime_utc":"2026-03-14T15:00:00Z","competition":"PL","opponent":"Tottenham Hotspur","venue":"H","location":""},{"id":"2026-03-21-pl-brighton-a-1500","season":"25/26","date":"2026-03-21","time":"15:00","datetime_utc":"2026-03-21T15:00:00Z","competition":"PL","opponent":"Brighton","venue":"A","location":""},{"id":"2026-04-11-pl-fulham-h-1500","season":"25/26","date":"2026-04-11","time":"15:00","datetime_utc":"2026-04-11T15:00:00Z","competition":"PL","opponent":"Fulham","venue":"H","location":""},{"id":"2026-04-18-pl-everton-a-1500","season":"25/26","date":"2026-04-18","time":"15:00","datetime_utc":"2026-04-18T15:00:00Z","competition":"PL","opponent":"Everton","venue":"A","location":""},{"id":"2026-04-25-pl-crystalpalace-h-1500","season":"25/26","date":"2026-04-25","time":"15:00","datetime_utc":"2026-04-25T15:00:00Z","competition":"PL","opponent":"Crystal Palace","venue":"H","location":""},{"id":"2026-05-02-pl-manchesterunited-a-1500","season":"25/26","date":"2026-05-02","time":"15:00","datetime_utc":"2026-05-02T15:00:00Z","competition":"PL","opponent":"Manchester United","venue":"A","location":""},{"id":"2026-05-09-pl-chelsea-h-1500","season":"25/26","date":"2026-05-09","time":"15:00","datetime_utc":"2026-05-09T15:00:00Z","competition":"PL","opponent":"Chelsea","venue":"H","location":""},{"id":"2026-05-17-pl-astonvilla-a-1500","season":"25/26","date":"2026-05-17","time":"15:00","datetime_utc":"2026-05-17T15:00:00Z","competition":"PL","opponent":"Aston Villa","venue":"A","location":""},{"id":"2026-05-24-pl-brentford-h-1600","season":"25/26","date":"2026-05-24","time":"16:00","datetime_utc":"2026-05-24T16:00:00Z","competition":"PL","opponent":"Brentford","venue":"H","location":""}]</script>
+
+<script>
+/* Inlined app script (single-file build) */
+
+const BUILD_VERSION = "3.6.16-gh";
+
+function safeSetValue(id, val){
+  const el = document.getElementById(id);
+  if (!el) return false;
+  el.value = val;
+  return true;
+}
+/* TicketHelpLFC Credit Tracker – PWA Starter (Local-only) */
+
+const STORAGE_KEY = "thlfc_credit_tracker_v1";
+const FIRST_SEEN_KEY = "thlfc_firstSeenAt";
+const LAST_BACKUP_KEY = "thlfc_lastBackupAt";
+const BACKUP_NUDGE_DISMISSED_KEY = "thlfc_backupNudgeDismissedAt";
+const HAS_USER_DATA_KEY = "thlfc_hasUserData";
+
+const $ = (id) => document.getElementById(id);
+
+function setText(id, value){ const el = $(id); if(el) el.textContent = value; }
+
+const state = {
+  data: null,
+  deferredPrompt: null,
+  lastAddSource: "manual",
+  currentView: "dash"
+};
+
+function uid() {
+  return crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "_" + Math.random().toString(16).slice(2);
+}
+
+function ensureFirstSeen() {
+  if (!localStorage.getItem(FIRST_SEEN_KEY)) {
+    localStorage.setItem(FIRST_SEEN_KEY, new Date().toISOString());
+  }
+}
+
+function setHasUserData() {
+  if (localStorage.getItem(HAS_USER_DATA_KEY) !== "true") {
+    localStorage.setItem(HAS_USER_DATA_KEY, "true");
+  }
+}
+
+function setLastBackupNow() {
+  localStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString());
+  localStorage.removeItem(BACKUP_NUDGE_DISMISSED_KEY);
+}
+
+function shouldPromptBackup({ noBackupAfterHours = 24, staleAfterDays = 7 } = {}) {
+  const now = Date.now();
+  const firstSeen = localStorage.getItem(FIRST_SEEN_KEY);
+  if (!firstSeen) {
+    localStorage.setItem(FIRST_SEEN_KEY, new Date().toISOString());
+    return false;
+  }
+
+  const dismissedAt = localStorage.getItem(BACKUP_NUDGE_DISMISSED_KEY);
+  if (dismissedAt) {
+    const dismissedMs = Date.parse(dismissedAt);
+    if (Number.isFinite(dismissedMs) && now - dismissedMs < 24 * 60 * 60 * 1000) {
+      return false;
+    }
+  }
+
+  const lastBackup = localStorage.getItem(LAST_BACKUP_KEY);
+  if (!lastBackup) {
+    const hasUserData = localStorage.getItem(HAS_USER_DATA_KEY) === "true";
+    const firstSeenMs = Date.parse(firstSeen);
+    const waitMs = noBackupAfterHours * 60 * 60 * 1000;
+    const waitedLongEnough = Number.isFinite(firstSeenMs) && now - firstSeenMs >= waitMs;
+    return hasUserData || waitedLongEnough;
+  }
+
+  const lastBackupMs = Date.parse(lastBackup);
+  if (!Number.isFinite(lastBackupMs)) return false;
+  const staleMs = staleAfterDays * 24 * 60 * 60 * 1000;
+  return now - lastBackupMs >= staleMs;
+}
+
+function backupPromptMessage() {
+  const lastBackup = localStorage.getItem(LAST_BACKUP_KEY);
+  if (!lastBackup) {
+    return "Quick reminder: you haven’t created a backup yet…";
+  }
+  const lastBackupMs = Date.parse(lastBackup);
+  if (!Number.isFinite(lastBackupMs)) {
+    return "Quick reminder: you haven’t created a backup yet…";
+  }
+  const days = Math.max(1, Math.floor((Date.now() - lastBackupMs) / (24 * 60 * 60 * 1000)));
+  return `Quick reminder: your last backup was ${days} day${days === 1 ? "" : "s"} ago…`;
+}
+
+function showBackupNudge() {
+  const nudge = $("backupNudge");
+  const message = $("backupNudgeMessage");
+  if (!nudge || !message) return;
+  if (!shouldPromptBackup()) {
+    nudge.classList.add("hidden");
+    return;
+  }
+  message.textContent = backupPromptMessage();
+  nudge.classList.remove("hidden");
+}
+
+function parseAmount(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return null;
+  // accept "£43.85", "43.85", "43,85"
+  const cleaned = s.replace(/[^0-9.,-]/g, "").replace(/,/g, ".");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : null;
+}
+
+function formatGBP(n) {
+  if (n == null) return "£0";
+  try {
+    return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(n);
+  } catch {
+    return "£" + String(n);
+  }
+}
+
+function todayISODate() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+
+function currentSeasonIdFromDate() {
+  // UK football season: Aug->May. In Jan 2026, that is 2025/26.
+  const d = new Date();
+  const y = d.getFullYear();
+  const mth = d.getMonth() + 1; // 1-12
+  const startYear = (mth >= 7) ? y : (y - 1); // July+ treat as new season start
+  const endYear = startYear + 1;
+  return `${startYear}-${String(endYear).slice(-2)}`;
+}
+
+function seasonLabelFromId(id) {
+  // "2025-26" -> "25/26"
+  const parts = String(id).split("-");
+  if (parts.length !== 2) return id;
+  const a = parts[0].slice(-2);
+  const b = parts[1].slice(-2);
+  return `${a}/${b}`;
+}
+
+function getUsedSeasonIds(accountId) {
+  const used = new Set();
+  const accId = accountId || null;
+  for (const m of (state.data.matches || [])) {
+    if (!m || !m.seasonId) continue;
+    if (!accId || m.accountId === accId) used.add(m.seasonId);
+  }
+  for (const acc of (state.data.accounts || [])) {
+    if (accId && acc && acc.id !== accId) continue;
+    const map = acc && acc.autoCupBySeason;
+    if (map) {
+      Object.keys(map).forEach(id => {
+        if (id) used.add(id);
+      });
+    }
+  }
+  return used;
+}
+
+function getAccountSeasonOptions(accountId) {
+  if (!accountId) return [];
+  const seasons = Array.isArray(state.data.seasons) ? state.data.seasons : [];
+  const used = getUsedSeasonIds(accountId);
+  const out = [];
+  const seen = new Set();
+  for (const s of seasons) {
+    if (s && used.has(s.id)) {
+      out.push(s);
+      seen.add(s.id);
+    }
+  }
+  for (const id of used) {
+    if (!seen.has(id)) {
+      out.push({ id, label: seasonLabelFromId(id) });
+      seen.add(id);
+    }
+  }
+  return out;
+}
+
+function ensureSeasonExists(id, label) {
+  if (!id) return;
+  if (!Array.isArray(state.data.seasons)) state.data.seasons = [];
+  const existing = state.data.seasons.find(s => s.id === id);
+  if (existing) {
+    if (!existing.label && label) existing.label = label;
+    if (!("userCreated" in existing)) existing.userCreated = true;
+    return;
+  }
+  state.data.seasons.push({
+    id,
+    label: label || seasonLabelFromId(id),
+    createdAt: new Date().toISOString(),
+    userCreated: true
+  });
+}
+
+function generateSeasons(rangeBack = 3, rangeForward = 6) {
+  const cur = currentSeasonIdFromDate(); // e.g. "2025-26"
+  const startYear = parseInt(cur.split("-")[0], 10);
+  const seasons = [];
+  for (let y = startYear - rangeBack; y <= startYear + rangeForward; y++) {
+    const id = `${y}-${String(y + 1).slice(-2)}`;
+    seasons.push({ id, label: seasonLabelFromId(id), createdAt: new Date().toISOString() });
+  }
+  return { seasons, activeSeasonId: cur };
+}
+
+function defaultData() {
+  const gen = generateSeasons();
+  return {
+    version: 2,
+    createdAt: new Date().toISOString(),
+    settings: {
+      ruleForwardedNoCredit: true,
+      ruleReturnedNoCredit: true,
+      ruleHospitalityNoCredit: true
+    },
+    seasons: gen.seasons,
+    activeSeasonId: gen.activeSeasonId,
+
+    // Multi-account support
+    accounts: [], // {id, name, autoCup, createdAt}
+    activeAccountId: null,
+
+    matches: [] // MatchEntry[] {accountId, seasonId, ...}
+  };
+}
+
+function load() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    state.data = defaultData();
+    save();
+    return;
+  }
+  try {
+    state.data = JSON.parse(raw) || {};
+  } catch {
+    state.data = {};
+  }
+
+  // Repair / migrate older or partial data
+  const gen = generateSeasons();
+  if (!Array.isArray(state.data.seasons) || state.data.seasons.length === 0) {
+    state.data.seasons = gen.seasons;
+  }
+  if (!state.data.activeSeasonId) {
+    state.data.activeSeasonId = gen.activeSeasonId;
+  } else {
+    // Ensure activeSeasonId is valid
+    const ok = state.data.seasons.some(s => s.id === state.data.activeSeasonId);
+    if (!ok) state.data.activeSeasonId = gen.activeSeasonId;
+  }
+
+  if (!Array.isArray(state.data.accounts)) state.data.accounts = [];
+  if (!("activeAccountId" in state.data)) state.data.activeAccountId = null;
+  if (!Array.isArray(state.data.matches)) state.data.matches = [];
+  if (!state.data.settings) {
+    state.data.settings = {
+      ruleForwardedNoCredit: true,
+      ruleReturnedNoCredit: true,
+      ruleHospitalityNoCredit: true
+    };
+  }
+
+
+  // Migrate legacy autoCup -> per-season map (current season only)
+  try{
+    const sid = state.data.activeSeasonId || gen.activeSeasonId;
+    for(const acc of (state.data.accounts || [])){
+      if (!acc.autoCupBySeason) {
+        const legacy = acc.autoCup || {LC:false, FAC:false, UCL:false};
+        acc.autoCupBySeason = {};
+        acc.autoCupBySeason[sid] = { LC: !!legacy.LC, FAC: !!legacy.FAC, UCL: !!legacy.UCL };
+      } else if (!acc.autoCupBySeason[sid] && acc.autoCup) {
+        const legacy = acc.autoCup;
+        acc.autoCupBySeason[sid] = { LC: !!legacy.LC, FAC: !!legacy.FAC, UCL: !!legacy.UCL };
+      }
+    }
+  }catch(e){}
+
+  save();
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+}
+
+function activeSeasonId() {
+  return state.data.activeSeasonId;
+}
+
+function getAutoCupForSeason(acc, seasonId){
+  const sid = seasonId || activeSeasonId();
+  if (!acc) return {LC:false, FAC:false, UCL:false};
+  if (acc.autoCupBySeason && acc.autoCupBySeason[sid]) {
+    const v = acc.autoCupBySeason[sid] || {};
+    return { LC: !!v.LC, FAC: !!v.FAC, UCL: !!v.UCL };
+  }
+  // Backward compatibility
+  const legacy = acc.autoCup || {};
+  return { LC: !!legacy.LC, FAC: !!legacy.FAC, UCL: !!legacy.UCL };
+}
+
+function setAutoCupForSeason(acc, seasonId, value){
+  if(!acc) return;
+  const sid = seasonId || activeSeasonId();
+  if(!acc.autoCupBySeason) acc.autoCupBySeason = {};
+  acc.autoCupBySeason[sid] = {
+    LC: !!value.LC,
+    FAC: !!value.FAC,
+    UCL: !!value.UCL
+  };
+}
+
+
+
+function activeAccountId() {
+  return state.data.activeAccountId;
+}
+
+function setActiveSeason(id) {
+  state.data.activeSeasonId = id;
+  save();
+  renderAll();
+}
+
+function setActiveAccount(id) {
+  state.data.activeAccountId = id;
+  save();
+  renderAll();
+  renderFixtures();
+  
+}
+
+function seasonLabel(id) {
+  const s = state.data.seasons.find(x => x.id === id);
+  return s ? s.label : id;
+}
+
+function getSeasonMatches(seasonId) {
+  const accId = activeAccountId();
+  return state.data.matches.filter(m => m.seasonId === seasonId && (!accId || m.accountId === accId));
+}
+
+function creditIsCounted(match) {
+  return match.creditCredit === "yes";
+}
+
+function computeSpend(seasonId) {
+  const matches = getSeasonMatches(seasonId);
+  const paid = matches.map(m => m.amountPaid).filter(v => typeof v === "number" && Number.isFinite(v));
+  const total = paid.reduce((a,b) => a + b, 0);
+  const avg = paid.length ? total / paid.length : 0;
+  return { total, avg, count: paid.length };
+}
+
+function computeBreakdownByCompetition(seasonId) {
+  const matches = getSeasonMatches(seasonId);
+  const comps = ["PL","UCL","FAC","LC","OTHER"];
+  const out = {};
+  for (const c of comps) out[c] = { H: 0, A: 0 };
+  for (const m of matches) {
+    if (m.creditCredit === "yes") {
+      const c = out[m.competition] ? m.competition : "OTHER";
+      if (m.venue === "H") out[c].H += 1;
+      if (m.venue === "A") out[c].A += 1;
+    }
+  }
+  return out;
+}
+
+function computeAttendanceByCompetition(seasonId) {
+  const matches = getSeasonMatches(seasonId);
+  const comps = ["PL","UCL","FAC","LC","OTHER"];
+  const out = {};
+  for (const c of comps) out[c] = { H: 0, A: 0 };
+  for (const m of matches) {
+    if (m.attended !== "yes") continue;
+    const c = out[m.competition] ? m.competition : "OTHER";
+    if (m.venue === "H") out[c].H += 1;
+    if (m.venue === "A") out[c].A += 1;
+  }
+  return out;
+}
+
+function computeTotals(seasonId) {
+  const matches = getSeasonMatches(seasonId);
+  let home = 0, away = 0;
+  for (const m of matches) {
+    if (creditIsCounted(m)) {
+      if (m.venue === "H") home += 1;
+      if (m.venue === "A") away += 1;
+    }
+  }
+  return { home, away, total: home + away };
+}
+
+function eligibilityText(totals) {
+  const max = Math.max(totals.home, totals.away, totals.total);
+  if (max >= 13) return "Likely in a high-credit bracket (tracked).";
+  if (max >= 4) return "You’re at 4+ in at least one category (tracked).";
+  if (max >= 3) return "You’re at 3+ in at least one category (tracked).";
+  if (max >= 2) return "You’re building credits (2+ tracked in a category).";
+  if (max >= 1) return "You’ve got 1+ tracked — keep going.";
+  return "Start logging matches to see your progress.";
+}
+
+function formatMatchTitle(m) {
+  return `Liverpool vs ${m.opponent}`;
+}
+
+function formatDisplayDate(ymd) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd || "");
+  if (!match) return ymd || "—";
+  return `${match[3]}-${match[2]}-${match[1]}`;
+}
+
+function competitionLabel(comp) {
+  const compMap = { PL: "PL", UCL: "UCL", FAC: "FA Cup", LC: "League Cup", OTHER: "Other" };
+  return compMap[comp] || comp || "Other";
+}
+
+function competitionBadgeClass(comp) {
+  const map = { PL: "comp-pl", UCL: "comp-ucl", LC: "comp-lc", FAC: "comp-fac", OTHER: "comp-other" };
+  return map[comp] || "comp-other";
+}
+
+function formatMeta(m) {
+  const date = formatDisplayDate(m.matchDate || "");
+  return `${date}`;
+}
+
+function badgeForCredit(m) {
+  if (m.creditCredit === "yes") return { text: "Credit", cls: "good" };
+  if (m.creditCredit === "no") return { text: "No credit", cls: "bad" };
+  return { text: "Unsure", cls: "neutral" };
+}
+
+function badgeForOutcome(m) {
+  const map = { applied: "Applied", successful: "Successful", unsuccessful: "Unsuccessful", na: "Didn’t apply" };
+  return { text: `${map[m.appliedStatus] || "—"}`, cls: "neutral" };
+}
+
+function badgeForAction(m) {
+  const map = {
+    credit: "Credit",
+    season_return: "Season Ticket Return",
+    fwd_me_credit: "Forwarded (credit)",
+    fwd_me_nocredit: "Forwarded (no credit)",
+    hosp_credit: "Hospitality (credit)",
+    hosp_nocredit: "Hospitality (no credit)",
+    scan_nocredit: "Scan in (no credit)"
+  };
+  return { text: `${map[m.ticketAction] || "—"}`, cls: "neutral" };
+}
+
+function goBackFromAdd() {
+  const s = state.lastAddSource;
+  if (s === "credits") setView("credits");
+  else if (s === "fixtures" || s === "fixture") setView("fixtures");
+  else if (s === "dash") setView("dash");
+  else setView("matches");
+}
+
+function setView(viewName) {
+  state.currentView = viewName;
+  try { localStorage.setItem("thlfc_lastView", viewName); } catch(e){}
+  const tabs = document.querySelectorAll(".tab");
+  tabs.forEach(t => t.classList.toggle("active", t.dataset.view === viewName));
+
+  const bTabs = document.querySelectorAll(".bottomTab");
+  bTabs.forEach(t => t.classList.toggle("active", t.dataset.view === viewName));
+
+  $("viewSetup").classList.toggle("hidden", viewName !== "setup");
+  $("viewDash").classList.toggle("hidden", viewName !== "dash");
+  $("viewMatches").classList.toggle("hidden", viewName !== "matches");
+  $("viewAdd").classList.toggle("hidden", viewName !== "add");
+  $("infoPage").classList.toggle("hidden", viewName !== "info");
+  if (viewName === "fixtures") { setTimeout(() => { bindFixturesControls(); renderFixtures(); }, 0); }
+  const vc = $("viewCredits");
+  if(vc) vc.classList.toggle("hidden", viewName !== "credits");
+  if (viewName === "credits") { renderCreditsChecklist(); }
+  if (viewName === "setup") { setTimeout(() => { try{ populateAllSeasonSelects(); }catch(e){} }, 0); }
+  $("viewSettings").classList.toggle("hidden", viewName !== "settings");
+  $("viewFixtures").classList.toggle("hidden", viewName !== "fixtures");
+  if (viewName === "fixtures") { setTimeout(() => { bindFixturesControls(); renderFixtures(); }, 0); }
+  if (viewName === "dash") { showBackupNudge(); }
+}
+
+
+function renderSeasonSelect() {
+  const sel = $("seasonSelect");
+  sel.innerHTML = "";
+  const seasons = getAccountSeasonOptions(activeAccountId());
+  if (seasons.length === 0) {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "No seasons yet";
+    sel.appendChild(opt);
+    sel.value = "";
+    sel.disabled = true;
+  } else {
+    const desired = activeSeasonId();
+    const hasDesired = seasons.some(s => s.id === desired);
+    if (desired && !hasDesired) {
+      setActiveSeason(seasons[0].id);
+      return;
+    }
+    for (const s of seasons) {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = s.label;
+      sel.appendChild(opt);
+    }
+    sel.value = desired || seasons[0].id;
+    sel.disabled = false;
+  }
+
+  // Update topbar season select
+  const sbSel = $("topbarSeasonSelect");
+  if (sbSel) {
+    sbSel.innerHTML = sel.innerHTML;
+    sbSel.value = sel.value;
+  }
+
+  // mirror into modals if present
+  const onboardSeason = $("onboardSeason");
+  if (onboardSeason) {
+    onboardSeason.innerHTML = sel.innerHTML;
+    onboardSeason.value = sel.value;
+  }
+}
+
+function renderAccountSelect() {
+  const sel = $("accountSelect");
+  if (!sel) return;
+  sel.innerHTML = "";
+  for (const a of state.data.accounts) {
+    const opt = document.createElement("option");
+    opt.value = a.id;
+    opt.textContent = a.name;
+    sel.appendChild(opt);
+  }
+  sel.value = state.data.activeAccountId || (state.data.accounts[0] ? state.data.accounts[0].id : "");
+  if (!state.data.activeAccountId && sel.value) {
+    state.data.activeAccountId = sel.value;
+    save();
+  }
+
+  // Update topbar account select
+  const sbSel = $("topbarAccountSelect");
+  if (sbSel) {
+    sbSel.innerHTML = sel.innerHTML;
+    sbSel.value = sel.value;
+  }
+}
+
+function renderDashboard() {
+  if (!activeAccountId()) {
+    if ($("statHome")) setText("statHome", "0");
+    if ($("statAway")) setText("statAway", "0");
+    if ($("statTotal")) setText("statTotal", "0");
+    setText("statSpend", formatGBP(0));
+    setText("statAvgSpend", formatGBP(0));
+    const mount = $("compBreakdown");
+    if (mount) mount.innerHTML = '<div class="empty">Add an account to start tracking.</div>';
+    const attendanceMount = $("attendanceBreakdown");
+    if (attendanceMount) attendanceMount.innerHTML = '<div class="empty">Add an account to start tracking.</div>';
+    const root = $("recentList");
+    if (root) root.innerHTML = '<div class="empty">No activity yet.</div>';
+    return;
+  }
+
+  const totals = computeTotals(activeSeasonId());
+  const spend = computeSpend(activeSeasonId());
+  if ($("statHome")) setText("statHome", String(totals.home));
+  if ($("statAway")) setText("statAway", String(totals.away));
+  if ($("statTotal")) setText("statTotal", String(totals.total));
+  setText("statSpend", formatGBP(spend.total));
+  setText("statAvgSpend", formatGBP(spend.avg));
+
+  // Competition breakdown table
+  const acc = state.data.accounts.find(a => a.id === activeAccountId());
+  const autoCup = getAutoCupForSeason(acc, activeSeasonId());
+  const breakdown = computeBreakdownByCompetition(activeSeasonId());
+  const labels = { PL: "Premier League", UCL: "UCL", FAC: "FA Cup", LC: "League Cup", OTHER: "Other" };
+  const compClasses = { PL: "comp-pl", UCL: "comp-ucl", LC: "comp-lc", FAC: "comp-fac", OTHER: "comp-other" };
+  const table = document.createElement("table");
+  table.className = "breakdownTable";
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Competition</th>
+        <th>Home</th>
+        <th>Away</th>
+      </tr>
+    </thead>`;
+  const tbody = document.createElement("tbody");
+  for (const key of Object.keys(breakdown)) {
+    const row = document.createElement("tr");
+    const comp = document.createElement("td");
+    comp.textContent = labels[key] || key;
+    const compClass = compClasses[key] || "comp-other";
+    const h = document.createElement("td");
+    const homeAuto = (key === "LC" && autoCup.LC) || (key === "FAC" && autoCup.FAC) || (key === "UCL" && autoCup.UCL);
+    if (homeAuto) {
+      h.innerHTML = `<span class="breakdownPill autocup">AutoCup</span>`;
+    } else {
+      h.innerHTML = `<span class="breakdownPill ${compClass}">H: ${breakdown[key].H}</span>`;
+    }
+    const a = document.createElement("td");
+    a.innerHTML = `<span class="breakdownPill ${compClass}">A: ${breakdown[key].A}</span>`;
+    row.appendChild(comp);
+    row.appendChild(h);
+    row.appendChild(a);
+    tbody.appendChild(row);
+  }
+  table.appendChild(tbody);
+  const mount = $("compBreakdown");
+  mount.innerHTML = "";
+  mount.appendChild(table);
+
+  const btnRow = document.createElement("div");
+  btnRow.style.marginTop = "16px";
+  btnRow.innerHTML = `<button class="btn full sm" style="background:var(--surface-2); color:var(--text);">View Full Checklist</button>`;
+  btnRow.querySelector("button").onclick = () => {
+      setView("credits");
+  };
+  mount.appendChild(btnRow);
+
+  const attendance = computeAttendanceByCompetition(activeSeasonId());
+  const attendanceTable = document.createElement("table");
+  attendanceTable.className = "breakdownTable";
+  attendanceTable.innerHTML = `
+    <thead>
+      <tr>
+        <th>Competition</th>
+        <th>Home</th>
+        <th>Away</th>
+      </tr>
+    </thead>`;
+  const attendanceBody = document.createElement("tbody");
+  let seasonHome = 0;
+  let seasonAway = 0;
+  for (const key of Object.keys(attendance)) {
+    const row = document.createElement("tr");
+    const comp = document.createElement("td");
+    comp.textContent = labels[key] || key;
+    const compClass = compClasses[key] || "comp-other";
+    const h = document.createElement("td");
+    h.innerHTML = `<span class="breakdownPill ${compClass}">H: ${attendance[key].H}</span>`;
+    const a = document.createElement("td");
+    a.innerHTML = `<span class="breakdownPill ${compClass}">A: ${attendance[key].A}</span>`;
+    seasonHome += attendance[key].H;
+    seasonAway += attendance[key].A;
+    row.appendChild(comp);
+    row.appendChild(h);
+    row.appendChild(a);
+    attendanceBody.appendChild(row);
+  }
+  const totalRow = document.createElement("tr");
+  totalRow.className = "breakdownTotal";
+  const totalLabel = document.createElement("td");
+  const seasonTotal = seasonHome + seasonAway;
+  totalLabel.textContent = `Season Attendance (Total: ${seasonTotal})`;
+  const totalHome = document.createElement("td");
+  totalHome.innerHTML = `<span class="breakdownPill attended">H: ${seasonHome}</span>`;
+  const totalAway = document.createElement("td");
+  totalAway.innerHTML = `<span class="breakdownPill attended">A: ${seasonAway}</span>`;
+  totalRow.appendChild(totalLabel);
+  totalRow.appendChild(totalHome);
+  totalRow.appendChild(totalAway);
+  attendanceBody.appendChild(totalRow);
+  attendanceTable.appendChild(attendanceBody);
+  const attendanceMount = $("attendanceBreakdown");
+  attendanceMount.innerHTML = "";
+  attendanceMount.appendChild(attendanceTable);
+
+  renderRecentActivity();
+}
+
+function renderRecentActivity() {
+  // Recent list: last 6 updated
+  const matches = getSeasonMatches(activeSeasonId())
+    .slice()
+    .sort((a,b) => (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt))
+    .slice(0, 6);
+
+  const root = $("recentList");
+  if (!root) return;
+  root.innerHTML = "";
+
+if (matches.length === 0) {
+    const div = document.createElement("div");
+    div.className = "empty";
+    div.textContent = "No matches yet — tap Add match to start tracking.";
+    root.appendChild(div);
+    return;
+  }
+
+  for (const m of matches) {
+    root.appendChild(matchCard(m));
+  }
+}
+
+function matchCard(m) {
+  const div = document.createElement("div");
+  div.className = "item matchItem";
+  div.tabIndex = 0;
+  div.role = "button";
+
+  const top = document.createElement("div");
+  top.className = "itemTop";
+
+  const left = document.createElement("div");
+  const title = document.createElement("div");
+  title.className = "itemTitle";
+  title.textContent = formatMatchTitle(m);
+  const meta = document.createElement("div");
+  meta.className = "itemMeta";
+  meta.textContent = formatMeta(m);
+  left.appendChild(title);
+  left.appendChild(meta);
+
+  const cornerTags = document.createElement("div");
+  cornerTags.className = "itemCornerTags";
+  const ha = (m.venue === "A") ? "A" : "H";
+  const comp = competitionLabel(m.competition || "OTHER");
+  const compClass = competitionBadgeClass(m.competition);
+  const compPill = document.createElement("div");
+  compPill.className = `pill comp-pill ${compClass}`;
+  compPill.textContent = comp;
+  const haPill = document.createElement("div");
+  haPill.className = `pill ${ha === "H" ? "ha-home" : "ha-away"}`;
+  haPill.textContent = ha;
+  cornerTags.appendChild(compPill);
+  cornerTags.appendChild(haPill);
+
+  const credit = badgeForCredit(m);
+  const creditBadge = document.createElement("div");
+  creditBadge.className = `badge ${credit.cls}`;
+  creditBadge.textContent = credit.text;
+
+  top.appendChild(left);
+  top.appendChild(cornerTags);
+
+  const badges = document.createElement("div");
+  badges.className = "itemBadges";
+
+  if (typeof m.amountPaid === "number" && Number.isFinite(m.amountPaid)) {
+    const cost = document.createElement("div");
+    cost.className = "badge neutral";
+    cost.textContent = `${formatGBP(m.amountPaid)}`;
+    badges.appendChild(cost);
+  }
+  badges.appendChild(creditBadge);
+
+  if (m.attended === "yes" || m.attended === "no") {
+    const attended = document.createElement("div");
+    attended.className = `badge ${m.attended === "yes" ? "attended-yes" : "attended-no"}`;
+    attended.textContent = m.attended === "yes" ? "Att" : "Not Att";
+    badges.appendChild(attended);
+  }
+
+  div.appendChild(top);
+  div.appendChild(badges);
+
+  if (m.notes && m.notes.trim()) {
+    const notes = document.createElement("div");
+    notes.className = "itemMeta";
+    notes.style.marginTop = "8px";
+    notes.textContent = `Notes: ${m.notes.trim()}`;
+    div.appendChild(notes);
+  }
+
+  div.addEventListener("click", () => editMatch(m.id));
+  div.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") editMatch(m.id);
+  });
+
+  return div;
+}
+
+function renderMatches() {
+  const list = $("matchesList");
+  const empty = $("matchesEmpty");
+
+  const q = $("searchInput").value.trim().toLowerCase();
+  const v = $("filterVenue").value;
+  const c = $("filterComp").value;
+  const cr = $("filterCredit").value;
+  const attended = $("filterAttended") ? $("filterAttended").value : "";
+
+  const matches = getSeasonMatches(activeSeasonId())
+    .filter(m => {
+      if (v && m.venue !== v) return false;
+      if (c && m.competition !== c) return false;
+      if (cr && m.creditCredit !== cr) return false;
+      if (attended && m.attended !== attended) return false;
+      if (q) {
+        const hay = `${m.opponent} ${m.notes || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    })
+    .slice()
+    .sort((a,b) => {
+      const mode = ($("matchSort") ? $("matchSort").value : "matchDate");
+      if (mode === "dateAdded") {
+        return (Number(b.createdAt||0) - Number(a.createdAt||0));
+      }
+      return (b.matchDate || "").localeCompare(a.matchDate || "");
+    });
+
+  list.innerHTML = "";
+  if (matches.length === 0) {
+    empty.classList.remove("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+  for (const m of matches) list.appendChild(matchCard(m));
+}
+
+function clearForm() {
+  $("matchId").value = "";
+  if ($("fixtureKey")) $("fixtureKey").value = "";
+  $("opponent").value = "";
+  $("matchDate").value = todayISODate();
+  setVenueChip("H");
+  setCompetitionChip("PL");
+  $("ticketAction").value = "credit";
+  setAttendedChip("yes");
+  setCreditChip("unsure");
+  $("notes").value = "";
+  $("amountPaid").value = "";
+  if($("btnDelete")) $("btnDelete").hidden = true;
+}
+
+function setCreditChip(val) {
+  const cc = $("creditCredit");
+  if (cc) cc.value = val;
+  document.querySelectorAll("[data-credit]").forEach(ch => {
+    ch.classList.toggle("active", ch.dataset.credit === val);
+  });
+}
+
+function setCompetitionChip(val) {
+  const comp = $("competition");
+  if (comp) comp.value = val;
+  document.querySelectorAll("[data-comp]").forEach(ch => {
+    ch.classList.toggle("active", ch.dataset.comp === val);
+  });
+}
+
+function setVenueChip(val) {
+  const venue = $("venue");
+  if (venue) venue.value = val;
+  document.querySelectorAll("[data-ha]").forEach(ch => {
+    ch.classList.toggle("active", ch.dataset.ha === val);
+  });
+}
+
+function setAttendedChip(val) {
+  const attended = $("attended");
+  if (attended) attended.value = val;
+  document.querySelectorAll("[data-attended]").forEach(ch => {
+    ch.classList.toggle("active", ch.dataset.attended === val);
+  });
+}
+
+function defaultCreditFromAction(action) {
+  // Default credit behaviour from "Ticket" selection (user can override with chips)
+  const map = {
+    credit: "yes",
+    season_return: "no",
+    fwd_me_credit: "yes",
+    fwd_me_nocredit: "no",
+    hosp_credit: "yes",
+    hosp_nocredit: "no",
+    scan_nocredit: "no"
+  };
+  return map[action] || "unsure";
+}
+
+function upsertMatchFromForm() {
+  const id = $("matchId").value || uid();
+  const now = new Date().toISOString();
+
+  const m = {
+    id,
+    accountId: activeAccountId(),
+    seasonId: activeSeasonId(),
+    opponent: $("opponent").value.trim(),
+    venue: $("venue").value,
+    competition: $("competition").value,
+    matchDate: $("matchDate").value,
+    appliedStatus: "na",
+    ticketAction: $("ticketAction").value,
+    attended: $("attended").value,
+    creditCredit: $("creditCredit").value,
+    notes: $("notes").value.trim(),
+    fixtureKey: ($("fixtureKey") ? $("fixtureKey").value.trim() : ""),
+    amountPaid: parseAmount($("amountPaid").value),
+    createdAt: now,
+    updatedAt: now
+  };
+
+  if (!m.opponent) {
+    alert("Please enter an opponent.");
+    return null;
+  }
+
+  // Prevent adding the same fixture twice (per account + season)
+  const isNew = ($("matchId").value || "") === "";
+  const fk = ($("fixtureKey") ? ($("fixtureKey").value || "").trim() : "");
+  if (isNew) {
+    const dup = state.data.matches.find(x =>
+      x.accountId === m.accountId &&
+      x.seasonId === m.seasonId &&
+      (
+        (fk && x.fixtureKey && x.fixtureKey === fk) ||
+        (!fk && x.opponent === m.opponent && x.matchDate === m.matchDate && x.competition === m.competition && x.venue === m.venue)
+      )
+    );
+    if (dup) {
+      alert("That fixture is already in your tracked matches for this account/season.");
+      return null;
+    }
+  }
+
+  const existingIdx = state.data.matches.findIndex(x => x.id === id);
+  if (existingIdx >= 0) {
+    m.createdAt = state.data.matches[existingIdx].createdAt;
+    state.data.matches[existingIdx] = m;
+  } else {
+    state.data.matches.push(m);
+  }
+
+  save();
+  return m;
+}
+
+function editMatch(id) {
+  const m = state.data.matches.find(x => x.id === id);
+  if (!m) return;
+
+  $("matchId").value = m.id;
+  $("opponent").value = m.opponent || "";
+  $("matchDate").value = m.matchDate || todayISODate();
+  setVenueChip(m.venue || "H");
+  setCompetitionChip(m.competition || "PL");
+  $("ticketAction").value = m.ticketAction || "used";
+  setAttendedChip(m.attended || "yes");
+  setCreditChip(m.creditCredit || "unsure");
+  $("notes").value = m.notes || "";
+  $("amountPaid").value = (m.amountPaid ?? "");
+
+  if($("btnDelete")) $("btnDelete").hidden = false;
+  if (state.currentView === "credits") state.lastAddSource = "credits";
+  else if (state.currentView === "dash") state.lastAddSource = "dash";
+  else if (state.currentView === "fixtures") state.lastAddSource = "fixtures";
+  else state.lastAddSource = "matches";
+  localStorage.setItem("thlfc_lastAddSource", state.lastAddSource);
+  setView("add");
+}
+
+function deleteCurrentMatch() {
+  const id = $("matchId").value;
+  if (!id) return;
+  const ok = confirm("Delete this match entry?");
+  if (!ok) return;
+
+  state.data.matches = state.data.matches.filter(m => m.id !== id);
+  save();
+  clearForm();
+  renderAll();
+  goBackFromAdd();
+}
+
+function downloadFile(filename, text, mime="application/octet-stream") {
+  const blob = new Blob([text], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportJSON() {
+  const payload = JSON.stringify(state.data, null, 2);
+  downloadFile(`thlfc-credits-${activeSeasonId()}-${new Date().toISOString().slice(0,10)}.json`, payload, "application/json");
+  setLastBackupNow();
+  showBackupNudge();
+}
+
+function escapeCSV(s) {
+  const str = String(s ?? "");
+  if (/[,\"\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
+  return str;
+}
+
+function exportCSV() {
+  const seasonId = activeSeasonId();
+  const rows = getSeasonMatches(seasonId)
+    .slice()
+    .sort((a,b) => (a.matchDate || "").localeCompare(b.matchDate || ""));
+
+  const header = [
+    "season","opponent","venue","competition","matchDate",
+    "appliedStatus","ticketAction","attended","creditCredit","amountPaid","notes","createdAt","updatedAt"
+  ];
+
+  const lines = [header.join(",")];
+  for (const m of rows) {
+    lines.push([
+      seasonLabel(m.seasonId),
+      m.opponent,
+      m.venue,
+      m.competition,
+      m.matchDate,
+      m.appliedStatus,
+      m.ticketAction,
+      m.attended,
+      m.creditCredit,
+      m.amountPaid,
+      m.notes,
+      m.createdAt,
+      m.updatedAt
+    ].map(escapeCSV).join(","));
+  }
+
+  downloadFile(`thlfc-credits-${seasonId}-${new Date().toISOString().slice(0,10)}.csv`, lines.join("\n"), "text/csv");
+  setLastBackupNow();
+  showBackupNudge();
+}
+
+function importJSONFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(String(reader.result));
+      if (!parsed || !parsed.seasons || !parsed.matches) throw new Error("Bad format");
+      state.data = parsed;
+      save();
+      renderAll();
+      setHasUserData();
+      showBackupNudge();
+      alert("Import complete ✅");
+    } catch {
+      alert("Import failed (Invalid JSON backup)");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function openSettings(){
+  return;
+}
+
+function closeSettings(){
+  return;
+}
+
+function bindSettings(){
+  return;
+}
+
+function addSeason() {
+  const label = prompt("Season label (e.g. 2026/27):");
+  if (!label) return;
+  const id = label.replace(/\s+/g, "-").replace(/\//g, "-").toLowerCase();
+  if (state.data.seasons.some(s => s.id === id)) {
+    alert("That season already exists.");
+    return;
+  }
+  ensureSeasonExists(id, label);
+  state.data.activeSeasonId = id;
+  save();
+  renderAll();
+}
+
+function updateHeader() {
+  // Sync header selects with state if they exist
+  const sbAcc = $("topbarAccountSelect");
+  const sbSea = $("topbarSeasonSelect");
+  if (sbAcc) sbAcc.value = activeAccountId() || "";
+  if (sbSea) sbSea.value = activeSeasonId() || "";
+
+  // Removed text labels as they are replaced by selects
+}
+
+function renderAll() {
+  renderSeasonSelect();
+  renderAccountSelect();
+  renderDashboard();
+  renderMatches();
+  renderCreditsChecklist();
+  updateHeader();
+}
+
+function setupPWA() {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js");
+  }
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    state.deferredPrompt = e;
+    const btn = $("btnInstall");
+    btn.hidden = false;
+    btn.addEventListener("click", async () => {
+      btn.hidden = true;
+      state.deferredPrompt.prompt();
+      await state.deferredPrompt.userChoice;
+      state.deferredPrompt = null;
+    }, { once: true });
+  });
+}
+
+function onEl(id, evt, fn, opts) {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener(evt, fn, opts);
+}
+
+function bindEvents() {
+  const handleTabClick = (tab) => {
+      const v = tab.dataset.view;
+      setView(v);
+      if (v === "fixtures") {
+        renderFixtures();
+      }
+      if (v === "add") {
+        state.lastAddSource = "manual";
+        localStorage.setItem("thlfc_lastAddSource", "manual");
+      }
+  };
+  document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => handleTabClick(tab)));
+  document.querySelectorAll(".bottomTab").forEach(tab => tab.addEventListener("click", () => handleTabClick(tab)));
+
+  onEl("accountSelect","change",(e)=> setActiveAccount(e.target.value));
+  onEl("seasonSelect","change",(e)=> handleSeasonChange(e.target.value));
+  
+  onEl("topbarAccountSelect","change",(e)=> setActiveAccount(e.target.value));
+  onEl("topbarSeasonSelect","change",(e)=> handleSeasonChange(e.target.value));
+
+  onEl("btnAddAccount","click", openSetupForNewAccount);
+  onEl("btnEditAccount","click", editActiveAccount);
+  onEl("btnDeleteAccount","click", deleteActiveAccount);
+  onEl("btnThemeToggleSettings","click", toggleTheme);
+  onEl("btnBackupData","click", () => {
+    exportJSON();
+  });
+  onEl("matchSort","change", renderMatches);
+
+  
+  const btnCancelAdd = $("btnCancelAdd");
+  if (btnCancelAdd) {
+    btnCancelAdd.addEventListener("click", () => {
+      clearForm();
+      goBackFromAdd();
+    });
+  }
+
+  onEl("btnReloadFixtures","click", reloadFixturesHard);
+  onEl("fixtureShow","change", renderFixtures);
+  onEl("fixtureComp","change", renderFixtures);
+
+  // Credit chips
+  document.querySelectorAll("[data-credit]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const val = btn.getAttribute("data-credit");
+      setCreditChip(val);
+    });
+  });
+
+  document.querySelectorAll("[data-comp]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const val = btn.getAttribute("data-comp");
+      setCompetitionChip(val);
+    });
+  });
+
+  document.querySelectorAll("[data-ha]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const val = btn.getAttribute("data-ha");
+      setVenueChip(val);
+    });
+  });
+
+  document.querySelectorAll("[data-attended]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const val = btn.getAttribute("data-attended");
+      setAttendedChip(val);
+    });
+  });
+
+  // Fixtures import
+  const fxInput = document.getElementById("importFixturesFile");
+  if (fxInput) {
+    fxInput.addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      const parsed = parseICSFixtures(text);
+      const existing = getImportedFixtures();
+      const map = new Map();
+      [...existing, ...parsed].forEach(f=>{ if(f && f.id) map.set(f.id, f); });
+      setImportedFixtures(Array.from(map.values()));
+      fixturesCache = null;
+      try { showToast(`Imported ${parsed.length} fixtures`); } catch(e) { alert(`Imported ${parsed.length} fixtures`); }
+const ce=document.getElementById("fixturesCount"); if(ce) ce.textContent = `Imported ${parsed.length} fixtures`;
+      renderFixtures();
+      fxInput.value = "";
+    });
+  }
+  const clearBtn = document.getElementById("btnClearFixtures");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", ()=>{
+      setImportedFixtures([]);
+      fixturesCache = null;
+      alert("Imported fixtures cleared");
+      renderFixtures();
+    });
+  }
+
+  $("matchForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const m = upsertMatchFromForm();
+    if (!m) return;
+    setHasUserData();
+    showBackupNudge();
+    clearForm();
+    renderAll();
+    goBackFromAdd();
+  });
+
+  $("btnDelete").addEventListener("click", deleteCurrentMatch);
+
+  ["searchInput","filterVenue","filterComp","filterCredit","filterAttended"].forEach(id => {
+    $(id).addEventListener("input", renderMatches);
+    $(id).addEventListener("change", renderMatches);
+  });
+
+  $("btnExportJSON").addEventListener("click", exportJSON);
+  $("btnExportCSV").addEventListener("click", exportCSV);
+  onEl("btnExportJSON2","click", exportJSON);
+onEl("btnExportCSV2","click", exportCSV);
+  onEl("btnImportBackup","click", () => {
+    const importInput = $("importFile");
+    if (importInput) {
+      importInput.click();
+    }
+  });
+  onEl("btnBackupNudgeNow","click", exportJSON);
+  onEl("btnBackupNudgeLater","click", () => {
+    localStorage.setItem(BACKUP_NUDGE_DISMISSED_KEY, new Date().toISOString());
+    showBackupNudge();
+  });
+$("importFile").addEventListener("change", (e) => {
+    const f = e.target.files?.[0];
+    if (f) importJSONFile(f);
+    e.target.value = "";
+  });
+  onEl("importFile2","change",(e)=>{
+    const f = e.target.files?.[0];
+    if (f) importJSONFile(f);
+    e.target.value = "";
+  });
+onEl("btnSettings","click", openSettings);
+  onEl("btnCloseSettings","click", closeSettings);
+  bindSettings();
+
+  // Setup screen
+  onEl("setupCount","input", renderSetupNames);
+  onEl("setupMode","change", () => {
+    updateSetupModeUI();
+    renderSetupNames();
+  });
+  onEl("btnSetupCreate","click", () => { try { saveSetup(); } catch(e){ alert("Setup error: " + (e && e.message ? e.message : e)); console.error(e); } });
+
+onEl("btnSupport","click", openSupport);
+onEl("btnSupportTop","click", openSupport);
+onEl("btnCloseSupport","click", closeSupport);
+onEl("btnBmac","click", ()=> window.open("https://buymeacoffee.com/lfctools", "_blank", "noopener"));
+onEl("btnInfo","click", () => setView("info"));
+onEl("btnFixturesAddManual","click", () => {
+  clearForm();
+  setView("add");
+});
+
+  onEl("btnCloseAccountSwitcher", "click", closeAccountSwitcher);
+  onEl("btnThemeToggleTop", "click", toggleTheme);
+  onEl("creditsFilterComp", "change", () => {
+    localStorage.setItem("thlfc_creditsFilterComp", $("creditsFilterComp").value);
+    renderCreditsChecklist();
+  });
+  onEl("creditsFilterHA", "change", () => {
+    localStorage.setItem("thlfc_creditsFilterHA", $("creditsFilterHA").value);
+    renderCreditsChecklist();
+  });
+}
+
+function initTheme() {
+  const saved = localStorage.getItem("thlfc_theme");
+  if (saved) {
+    document.documentElement.setAttribute("data-theme", saved);
+  }
+  updateThemeIcon();
+}
+
+function updateThemeIcon() {
+  const current = document.documentElement.getAttribute("data-theme");
+  const btn2 = document.getElementById("btnThemeToggleSettings");
+  const label = document.getElementById("themeLabel");
+  
+  const text = current === "light" ? "Dark Mode" : "Light Mode";
+  const labelText = current === "light" ? "Light" : "Dark";
+  
+  if (btn2) {
+     // btn2 is the row in settings
+  }
+  if (label) label.textContent = labelText;
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme");
+  const next = current === "light" ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("thlfc_theme", next);
+  updateThemeIcon();
+}
+
+function init() {
+  if (window.__THLFC_INITED) return;
+  window.__THLFC_INITED = true;
+  load();
+  ensureFirstSeen();
+  setupPWA();
+  bindEvents();
+  initTheme();
+  try { bindFixturesControls(); } catch(e) {}
+  clearForm();
+  renderAll();
+  
+  if ($("creditsFilterComp")) $("creditsFilterComp").value = localStorage.getItem("thlfc_creditsFilterComp") || "";
+  if ($("creditsFilterHA")) $("creditsFilterHA").value = localStorage.getItem("thlfc_creditsFilterHA") || "";
+
+  updateSetupModeUI();
+  
+  state.lastAddSource = localStorage.getItem("thlfc_lastAddSource") || "manual";
+  const lastView = localStorage.getItem("thlfc_lastView");
+  if (lastView && ["dash","matches","credits","fixtures","settings","info","add"].includes(lastView)) {
+    setView(lastView);
+  } else {
+    setView("dash");
+  }
+  showBackupNudge();
+
+  if (!state.data.accounts || state.data.accounts.length === 0) {
+    setView("setup");
+    renderSetupNames();
+    updateSetupModeUI();
+  
+}
+}
+
+/* ---------- Accounts + Setup ---------- */
+
+
+function renderSetupNames() {
+  const wrap = $("setupNames");
+  if (!wrap) return;
+
+  const count = Math.max(1, Math.min(10, parseInt($("setupCount")?.value || "1", 10)));
+
+  wrap.innerHTML = "";
+  if (getSetupMode() === "existing") {
+    try { populateAllSeasonSelects(); } catch(e) {}
+    return;
+  }
+
+  for (let i = 1; i <= count; i++) {
+    const row = document.createElement("div");
+    row.className = "item";
+
+    row.innerHTML = `
+      <div class="fieldLabel">Account ${i}</div>
+      <input class="input" id="setupName_${i}" placeholder="${i === 1 ? "Me" : "Account " + i}" />
+
+      <div class="fieldLabel" style="margin-top:10px;">AutoCup (Home) for this account</div>
+      <div class="list" style="margin-top: 8px;">
+        <label class="toggle">
+          <span>League Cup</span>
+          <input type="checkbox" id="setupAccLC_${i}" />
+        </label>
+        <label class="toggle">
+          <span>FA Cup</span>
+          <input type="checkbox" id="setupAccFAC_${i}" />
+        </label>
+        <label class="toggle">
+          <span>Champions League</span>
+          <input type="checkbox" id="setupAccUCL_${i}" />
+        </label>
+      </div>
+
+      <div class="hint" style="margin-top:8px;">AutoCup only affects <strong>HOME</strong> credits. Away credits still tracked.</div>
+    `;
+
+    wrap.appendChild(row);
+  }
+  try { populateAllSeasonSelects(); } catch(e) {}
+
+}
+
+function getSetupMode() {
+  return $("setupMode")?.value || "new";
+}
+
+function populateExistingAccountSelect() {
+  const sel = $("setupExistingAccount");
+  if (!sel) return;
+  sel.innerHTML = "";
+  for (const a of (state.data.accounts || [])) {
+    const opt = document.createElement("option");
+    opt.value = a.id;
+    opt.textContent = a.name;
+    sel.appendChild(opt);
+  }
+  sel.value = activeAccountId() || sel.options[0]?.value || "";
+}
+
+function updateSetupModeUI() {
+  const modeSelect = $("setupMode");
+  const newFields = $("setupNewAccountFields");
+  const existingFields = $("setupExistingAccountFields");
+  if (!modeSelect || !newFields || !existingFields) return;
+  const hasAccounts = (state.data.accounts || []).length > 0;
+  const existingOption = modeSelect.querySelector('option[value="existing"]');
+  if (existingOption) existingOption.disabled = !hasAccounts;
+  if (!hasAccounts && modeSelect.value === "existing") modeSelect.value = "new";
+
+  const isExisting = modeSelect.value === "existing";
+  newFields.classList.toggle("hidden", isExisting);
+  existingFields.classList.toggle("hidden", !isExisting);
+  if (isExisting) populateExistingAccountSelect();
+}
+
+
+function openSetupForNewAccount() {
+  // Convenience: go to setup screen but keep existing accounts
+  state.isAddingSingle = true;
+  setView("setup");
+  $("setupCount").value = "1";
+  if ($("setupMode")) $("setupMode").value = "new";
+
+  // Ensure the setup season dropdown is populated with real season IDs
+  try { populateSeasonSelect($("setupSeason")); } catch(e) {}
+  if ($("setupSeason")) $("setupSeason").value = activeSeasonId();
+
+  updateSetupModeUI();
+  renderSetupNames();
+}
+
+function saveSetup() {
+  const count = Math.max(1, Math.min(10, parseInt($("setupCount")?.value || "1", 10)));
+  const setupSeason = $("setupSeason");
+  const season = setupSeason?.value || activeSeasonId();
+  const seasonLabel = setupSeason?.selectedOptions?.[0]?.textContent || seasonLabelFromId(season);
+  ensureSeasonExists(season, seasonLabel);
+  setActiveSeason(season);
+
+  if (getSetupMode() === "existing") {
+    const accId = $("setupExistingAccount")?.value;
+    const acc = state.data.accounts.find(a => a.id === accId);
+    if (!acc) {
+      alert("Select an existing account to add a season.");
+      return;
+    }
+    const autoCup = {
+      LC: !!$("setupExistingLC")?.checked,
+      FAC: !!$("setupExistingFAC")?.checked,
+      UCL: !!$("setupExistingUCL")?.checked
+    };
+    setAutoCupForSeason(acc, season, autoCup);
+    acc.autoCup = {
+      LC: !!autoCup.LC,
+      FAC: !!autoCup.FAC,
+      UCL: !!autoCup.UCL
+    };
+    setActiveAccount(acc.id);
+    save();
+    renderAll();
+    setView("dash");
+    try { showToast(`Season added to ${acc.name}`); } catch(e) { alert(`Season added to ${acc.name}`); }
+    return;
+  }
+
+  const createdIds = [];
+
+  // Create accounts from inputs (+ per-account AutoCup)
+  for (let i = 1; i <= count; i++) {
+    const val = ($("setupName_" + i)?.value || "").trim();
+    const name = val || (i === 1 ? "Me" : `Account ${i}`);
+
+    const autoCup = {
+      LC: !!$("setupAccLC_" + i)?.checked,
+      FAC: !!$("setupAccFAC_" + i)?.checked,
+      UCL: !!$("setupAccUCL_" + i)?.checked
+    };
+
+    const acc = createAccount(name, autoCup, season);
+    createdIds.push(acc.id);
+  }
+
+  // If adding a single new account, switch to it
+  if (state.isAddingSingle && createdIds.length > 0) {
+    setActiveAccount(createdIds[createdIds.length - 1]);
+  } else if (!activeAccountId() && createdIds.length > 0) {
+    setActiveAccount(createdIds[0]);
+  }
+
+  state.isAddingSingle = false;
+
+  // Feedback
+  try { showToast(`Saved ${createdIds.length} account(s)`); } catch(e) { if(createdIds.length===0) alert("No accounts were saved."); }
+
+  renderAll();
+  setView("dash");
+}
+
+
+
+function createAccount(name, autoCup={LC:false, FAC:false, UCL:false}, seasonId=null) {
+  const sid = seasonId || activeSeasonId();
+  const acc = {
+    id: uid(),
+    name: name.trim(),
+    // Per-season AutoCup settings
+    autoCupBySeason: {
+      [sid]: {
+        LC: !!autoCup.LC,
+        FAC: !!autoCup.FAC,
+        UCL: !!autoCup.UCL
+      }
+    },
+    // Legacy field (kept for backward-compat / export)
+    autoCup: {
+      LC: !!autoCup.LC,
+      FAC: !!autoCup.FAC,
+      UCL: !!autoCup.UCL
+    },
+    createdAt: new Date().toISOString()
+  };
+  state.data.accounts.push(acc);
+  if (!state.data.activeAccountId) state.data.activeAccountId = acc.id;
+  save();
+  return acc;
+}
+
+
+
+/* ---------- Fixtures ---------- */
+
+var fixturesCache = null;
+
+// Published Google Sheet (CSV)
+const FIXTURES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRqcy7d0MakWNfXkcDa60y4opsxQifUfzw38man6J0-U-2BvQKbUIJPnpPMFaxQMlYBV2-psPNram_E/pub?gid=716063176&single=true&output=csv";
+
+// Cache CSV results in localStorage (so fixtures still load if you're offline)
+const FIXTURES_CACHE_KEY = "thlfc_fixtures_csv_cache_v1";
+const FIXTURES_CACHE_TS_KEY = "thlfc_fixtures_csv_cache_ts_v1";
+const FIXTURES_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+function loadCachedCSVFixtures() {
+  try {
+    const ts = Number(localStorage.getItem(FIXTURES_CACHE_TS_KEY) || "0");
+    const raw = localStorage.getItem(FIXTURES_CACHE_KEY);
+    if (!raw) return null;
+    const fixtures = JSON.parse(raw);
+    if (!Array.isArray(fixtures)) return null;
+    return { ts, fixtures };
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveCachedCSVFixtures(fixtures) {
+  try {
+    localStorage.setItem(FIXTURES_CACHE_KEY, JSON.stringify(fixtures || []));
+    localStorage.setItem(FIXTURES_CACHE_TS_KEY, String(Date.now()));
+  } catch (e) {}
+}
+
+// Simple CSV parser that supports quoted fields + commas
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let cur = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < (text || "").length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+
+    if (inQuotes) {
+      if (ch === '"' && next === '"') {
+        cur += '"';
+        i++;
+      } else if (ch === '"') {
+        inQuotes = false;
+      } else {
+        cur += ch;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inQuotes = true;
+      continue;
+    }
+
+    if (ch === ",") {
+      row.push(cur);
+      cur = "";
+      continue;
+    }
+
+    if (ch === "\n") {
+      row.push(cur);
+      rows.push(row);
+      row = [];
+      cur = "";
+      continue;
+    }
+
+    if (ch === "\r") continue;
+
+    cur += ch;
+  }
+
+  // last cell
+  row.push(cur);
+  rows.push(row);
+
+  // drop fully empty trailing rows
+  while (rows.length && rows[rows.length - 1].every(v => String(v || "").trim() === "")) rows.pop();
+  return rows;
+}
+
+function toFixtureObject(headers, cells) {
+  const obj = {};
+  headers.forEach((h, idx) => { obj[h] = (cells[idx] ?? "").trim(); });
+
+  const date = obj.date || "";
+  const time = obj.time || "00:00";
+  const competition = obj.competition || "OTHER";
+  const opponent = obj.opponent || "";
+  const venue = (obj.venue || "H").toUpperCase() === "A" ? "A" : "H";
+
+  // Ensure ID exists (needed for de-duping + tracked highlighting)
+  const safeOpp = opponent.replace(/\s+/g, "").toLowerCase();
+  const id = (obj.id && obj.id.trim()) ? obj.id.trim() :
+    `${date}-${competition.toLowerCase()}-${safeOpp}-${venue.toLowerCase()}-${String(time).replace(":","")}`;
+
+  // Ensure datetime_utc exists (some parts of the app use date only, but keep it consistent)
+  const dtUtc = (obj.datetime_utc && obj.datetime_utc.trim()) ? obj.datetime_utc.trim() :
+    (date ? `${date}T${time}:00Z` : "");
+
+  return {
+    id,
+    season: obj.season || "",
+    date,
+    time,
+    datetime_utc: dtUtc,
+    competition,
+    opponent,
+    venue,
+    location: obj.location || ""
+  };
+}
+
+async function fetchFixturesFromCSV() {
+  const res = await fetch(FIXTURES_CSV_URL, { cache: "no-store" });
+  if (!res.ok) throw new Error(`CSV HTTP ${res.status}`);
+  const text = await res.text();
+  const rows = parseCSV(text);
+  if (!rows.length) return [];
+  const headers = rows[0].map(h => String(h || "").trim());
+  const dataRows = rows.slice(1);
+
+  const fixtures = [];
+  for (const r of dataRows) {
+    if (!r || r.every(v => String(v || "").trim() === "")) continue;
+    fixtures.push(toFixtureObject(headers, r));
+  }
+
+  // De-dupe by id (keep last)
+  const map = new Map();
+  fixtures.forEach(f => { if (f && f.id) map.set(String(f.id), f); });
+  return Array.from(map.values());
+}
+
+async function loadFixturesData() {
+  if (fixturesCache) return fixturesCache;
+
+  // 1) CSV cache (fast + offline-friendly)
+  const cached = loadCachedCSVFixtures();
+  if (cached && (Date.now() - cached.ts) < FIXTURES_TTL_MS && cached.fixtures.length) {
+    fixturesCache = cached.fixtures;
+    return fixturesCache;
+  }
+
+  // 2) Live CSV (Google Sheet)
+  try {
+    const fixtures = await fetchFixturesFromCSV();
+    if (Array.isArray(fixtures) && fixtures.length) {
+      fixturesCache = fixtures;
+      saveCachedCSVFixtures(fixturesCache);
+      return fixturesCache;
+    }
+  } catch (e) {
+    // swallow + fall through to embedded/imported
+  }
+
+  // 3) Embedded JSON in index.html (offline + SW-safe)
+  try {
+    const el = document.getElementById("fixturesData");
+    if (el && el.textContent) {
+      const arr = JSON.parse(el.textContent);
+      fixturesCache = Array.isArray(arr) ? arr : [];
+      return fixturesCache;
+    }
+  } catch(e) {}
+
+  // 4) Imported fixtures from localStorage
+  try {
+    const imported = getImportedFixtures();
+    if (Array.isArray(imported) && imported.length) {
+      fixturesCache = imported.slice();
+      return fixturesCache;
+    }
+  } catch(e) {}
+
+  fixturesCache = [];
+  return fixturesCache;
+}
+
+function formatFixtureDate(f) {
+  // Use date only (app stores matchDate only). Time may be 00:00 in feed.
+  const raw = f.date || (f.datetime_utc ? (f.datetime_utc.slice(0,10)) : "");
+  return formatDisplayDate(raw);
+}
+
+function fixtureRow(f) {
+  const when = formatFixtureDate(f);
+  const ha = (f.venue === "H") ? "H" : "A";
+  const comp = f.competition || "OTHER";
+  const compClass = competitionBadgeClass(comp);
+  const opp = f.opponent || "—";
+  const time = (f.time && f.time !== "00:00") ? ` • ${f.time}` : "";
+  const el = document.createElement("div");
+  el.className = "item clickable";
+  el.innerHTML = `
+    <div class="row space-between">
+      <div>
+        <div class="itemTitle">${opp}</div>
+        <div class="hint">${when}${time}</div>
+      </div>
+     <div class="fixtureLabels">
+        <div class="pill comp-pill ${compClass}">${comp}</div>
+        <div class="pill ${ha === "H" ? "ha-home" : "ha-away"}">${ha}</div>
+      </div>
+    </div>
+  `;
+  el.addEventListener("click", () => prefillFromFixture(f));
+  return el;
+}
+
+async function renderFixtures(options = {}) {
+  try {
+    const listEl = document.getElementById("fixturesList");
+    const emptyEl = document.getElementById("fixturesEmpty");
+    const countEl = document.getElementById("fixturesCount");
+
+    if (!listEl || !emptyEl) return;
+
+    listEl.innerHTML = "";
+    emptyEl.classList.add("hidden");
+    if (countEl) countEl.textContent = "";
+
+    const showSel = document.getElementById("fixtureShow");
+    const compSel = document.getElementById("fixtureComp");
+    const haSel = document.getElementById("fixtureHA");
+    const compFilter = compSel ? compSel.value : "";
+    const haFilter = haSel ? haSel.value : "";
+
+    const data = (await loadFixturesData()).slice();
+    if (countEl) countEl.textContent = `Loaded ${data.length} fixtures…`;
+
+    const today = new Date();
+    today.setUTCHours(0,0,0,0);
+    const seasonFilterLabel = seasonLabelFromId(activeSeasonId());
+    const preferUpcoming = options && options.preferUpcoming;
+    if (showSel) {
+      const hasUpcoming = data.some(f => {
+        if (seasonFilterLabel && fixtureSeasonLabel(f) !== seasonFilterLabel) return false;
+        const raw = (f.date || (f.datetime_utc || ""));
+        const d = parseYMD((raw || "").slice(0,10));
+        return d && d >= today;
+      });
+      if (preferUpcoming && hasUpcoming) {
+        showSel.value = "upcoming";
+      }
+      if (showSel.value === "upcoming" && !hasUpcoming) {
+        showSel.value = "past";
+      }
+    }
+    const show = showSel ? showSel.value : "upcoming";
+
+    let filtered = data.filter(f => {
+      if (seasonFilterLabel && fixtureSeasonLabel(f) !== seasonFilterLabel) return false;
+      if (compFilter && f.competition !== compFilter) return false;
+      if (haFilter && (f.venue || "H") !== haFilter) return false;
+      const raw = (f.date || (f.datetime_utc||""));
+      const d = parseYMD((raw || "").slice(0,10));
+      if (!d) return false;
+      if (show === "upcoming") return d >= today;
+      if (show === "past") return d < today;
+      return true;
+    });
+
+    filtered.sort((a,b)=> (a.date||"").localeCompare(b.date||""));
+    if (show === "past") filtered.reverse();
+
+    if (countEl) countEl.textContent = `Loaded ${data.length} fixtures • Showing ${filtered.length}`;
+
+    if (filtered.length === 0) {
+      emptyEl.classList.remove("hidden");
+      emptyEl.textContent = (show === "past") ? "No past fixtures found." : "No fixtures match your filters.";
+      return;
+    }
+
+    if (countEl) countEl.textContent = `Loaded ${data.length} fixtures • Showing ${filtered.length}`;
+
+// Build a fast lookup of tracked matches for this account/season
+const _seasonId = activeSeasonId();
+const _accId = activeAccountId();
+const _matches = (state.data.matches || []).filter(m => m && m.seasonId === _seasonId && (!_accId || m.accountId === _accId));
+const _trackedIds = new Set(_matches.map(m => (m.fixtureKey || "").trim()).filter(Boolean));
+const _trackedKeys = new Set(_matches.map(m => `${(m.matchDate||"")}|${(m.competition||"")}|${(m.venue||"")}|${(m.opponent||"")}`.toLowerCase()).filter(k => k !== "|||"));
+
+    listEl.innerHTML = filtered.map(f => {
+      const when = (f.date || (f.datetime_utc||"").slice(0,10));
+      const whenDisplay = formatDisplayDate(when);
+      const ha = (f.venue === "A") ? "A" : "H";
+      const comp = f.competition || "OTHER";
+      const compClass = competitionBadgeClass(comp);
+      const opp = f.opponent || "—";
+      const time = (f.time && f.time !== "00:00") ? ` • ${f.time}` : "";
+      const fid = (f.id || "").replace(/"/g,'');
+      const key = `${when}|${comp}|${ha}|${opp}`.toLowerCase();
+      const tracked = (fid && _trackedIds.has(fid)) || _trackedKeys.has(key);
+      return `
+        <div class="item clickable ${tracked ? "fixtureTracked" : ""}" data-fixture-id="${fid}">
+          <div class="row space-between">
+            <div>
+              <div class="itemTitle">${opp}</div>
+              <div class="hint">${whenDisplay}${time}</div>
+            </div>
+           <div class="fixtureLabels">
+              <div class="pill comp-pill ${compClass}">${comp}</div>
+              <div class="pill ${ha === "H" ? "ha-home" : "ha-away"}">${ha}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Click delegation
+    listEl.querySelectorAll("[data-fixture-id]").forEach(el => {
+      el.addEventListener("click", () => {
+        const id = el.getAttribute("data-fixture-id");
+        const fx = filtered.find(x => x.id === id) || filtered[0];
+        state.lastAddSource = "fixture";
+        localStorage.setItem("thlfc_lastAddSource", "fixture");
+        setView("add");
+        setTimeout(() => { prefillFromFixture(fx); }, 0);
+        try{ showToast('Fixture loaded — complete ticket details then Save'); }catch(e){}
+      });
+    });
+
+  } catch (e) {
+    const emptyEl = document.getElementById("fixturesEmpty");
+    if (emptyEl) {
+      emptyEl.classList.remove("hidden");
+      emptyEl.textContent = "Fixtures error: " + (e && e.message ? e.message : e);
+    }
+  }
+}
+
+function prefillFromFixture(f) {
+  // Clear current form, then prefill and switch view
+  clearForm();
+  if ($("fixtureKey")) $("fixtureKey").value = (f.id || `${f.date||""}|${f.competition||""}|${f.venue||""}|${f.opponent||""}`);
+  $("opponent").value = f.opponent || "";
+  setVenueChip((f.venue === "A") ? "A" : "H");
+  // Map competitions to app options
+  const comp = f.competition || "OTHER";
+  if (["PL","UCL","FAC","LC","OTHER"].includes(comp)) {
+    setCompetitionChip(comp);
+  } else {
+    setCompetitionChip("OTHER");
+  }
+  $("matchDate").value = f.date || (f.datetime_utc ? f.datetime_utc.slice(0,10) : "");
+  $("ticketAction").value = "credit";
+  setCreditChip(defaultCreditFromAction("credit"));
+  setView("add");
+}
+
+
+function parseYMD(ymd){
+  // ymd: YYYY-MM-DD
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd||"");
+  if(!m) return null;
+  const y=+m[1], mo=+m[2]-1, d=+m[3];
+  return new Date(Date.UTC(y,mo,d));
+}
+
+function seasonIdFromDateString(ymd){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd || "");
+  if(!m) return "";
+  const y = Number(m[1]);
+  const month = Number(m[2]);
+  if (!Number.isFinite(y) || !Number.isFinite(month)) return "";
+  const startYear = (month >= 7) ? y : (y - 1);
+  return `${startYear}-${String(startYear + 1).slice(-2)}`;
+}
+
+function fixtureSeasonLabel(f){
+  if (!f) return "";
+  const raw = String(f.season || "").trim();
+  if (raw) {
+    if (raw.includes("/")) return raw;
+    if (raw.includes("-")) return seasonLabelFromId(raw);
+    return raw;
+  }
+  const rawDate = f.date || (f.datetime_utc ? f.datetime_utc.slice(0,10) : "");
+  const seasonId = seasonIdFromDateString(rawDate);
+  return seasonId ? seasonLabelFromId(seasonId) : "";
+}
+
+function showToast(msg){
+  const el = document.createElement("div");
+  el.textContent = msg;
+  el.style.position="fixed";
+  el.style.left="50%";
+  el.style.bottom="24px";
+  el.style.transform="translateX(-50%)";
+  el.style.background="#111";
+  el.style.color="#fff";
+  el.style.padding="10px 14px";
+  el.style.border="1px solid #333";
+  el.style.borderRadius="999px";
+  el.style.zIndex="9999";
+  document.body.appendChild(el);
+  setTimeout(()=>{ el.style.opacity="0"; el.style.transition="opacity .25s"; }, 1200);
+  setTimeout(()=>{ el.remove(); }, 1600);
+}
+
+async function renderCreditsChecklist() {
+  const list = $("creditsChecklist");
+  const totalEl = $("creditsTotal");
+  const filterEl = $("creditsFilterComp");
+  const haEl = $("creditsFilterHA");
+
+  if (!list) return;
+  list.innerHTML = '<div class="empty">Loading...</div>';
+  if (totalEl) totalEl.textContent = "";
+
+  const fixtures = await loadFixturesData();
+  const seasonId = activeSeasonId();
+  const seasonTxt = seasonLabelFromId(seasonId);
+  
+  let seasonFixtures = fixtures.filter(f => fixtureSeasonLabel(f) === seasonTxt);
+  
+  if (filterEl && filterEl.value) {
+    seasonFixtures = seasonFixtures.filter(f => (f.competition || "OTHER") === filterEl.value);
+  }
+  
+  if (haEl && haEl.value) {
+    seasonFixtures = seasonFixtures.filter(f => (f.venue || "H") === haEl.value);
+  }
+
+  seasonFixtures.sort((a,b) => (a.date || "").localeCompare(b.date || ""));
+
+  const matches = getSeasonMatches(seasonId);
+  const matchMap = new Map();
+  matches.forEach(m => {
+    if (m.fixtureKey) matchMap.set(m.fixtureKey, m);
+    const key = `${m.matchDate}|${m.competition}|${m.venue}|${m.opponent}`.toLowerCase();
+    matchMap.set(key, m);
+  });
+
+  list.innerHTML = "";
+  
+  if (seasonFixtures.length === 0) {
+    list.innerHTML = '<div class="empty">No fixtures found for this season matching filters.</div>';
+    if (totalEl) totalEl.textContent = "Credits: 0 / 0";
+    return;
+  }
+
+  let creditCount = 0;
+
+  seasonFixtures.forEach(f => {
+    const fid = (f.id || "").replace(/"/g,'');
+    const key = `${f.date}|${f.competition}|${f.venue}|${f.opponent}`.toLowerCase();
+    const match = matchMap.get(fid) || matchMap.get(key);
+    
+    const el = document.createElement("div");
+    el.className = "item clickable";
+    
+    let statusHtml = `<div class="badge" style="opacity:0.5; background:var(--surface-2);">Not Tracked</div>`;
+    if (match) {
+      if (match.creditCredit === 'yes') {
+        statusHtml = `<div class="badge good">Credit</div>`;
+        creditCount++;
+      }
+      else if (match.creditCredit === 'no') statusHtml = `<div class="badge bad">No Credit</div>`;
+      else statusHtml = `<div class="badge neutral">Unsure</div>`;
+    }
+
+    const when = formatDisplayDate(f.date);
+    
+    el.innerHTML = `
+      <div class="row space-between">
+        <div style="flex:1">
+          <div class="itemTitle" style="font-size:16px">${f.opponent} <span class="pill ${f.venue === 'H' ? 'ha-home' : 'ha-away'}" style="font-size:10px; padding:2px 6px; min-width:auto; margin-left:4px;">${f.venue}</span></div>
+        </div>
+        <div style="text-align:right">${statusHtml}</div>
+      </div>
+    `;
+    el.onclick = () => {
+        if (match) editMatch(match.id);
+        else {
+            state.lastAddSource = "credits";
+            localStorage.setItem("thlfc_lastAddSource", "credits");
+            prefillFromFixture(f);
+        }
+    };
+    list.appendChild(el);
+  });
+
+  if (totalEl) {
+    totalEl.textContent = `Credits: ${creditCount} / ${seasonFixtures.length}`;
+  }
+}
+
+/* Fixtures: ensure controls always re-render */
+(function(){
+  const fs = document.getElementById("fixtureShow");
+  const fc = document.getElementById("fixtureComp");
+  const fh = document.getElementById("fixtureHA");
+  const fr = document.getElementById("btnReloadFixtures");
+  if (fs) fs.addEventListener("change", renderFixtures);
+  if (fc) fc.addEventListener("change", renderFixtures);
+  if (fh) fh.addEventListener("change", renderFixtures);
+  if (fr) fr.addEventListener("click", reloadFixturesHard);
+  const clr = document.getElementById("btnClearFixtures");
+  if (clr) clr.addEventListener("click", ()=>{ setImportedFixtures([]); fixturesCache=null; try{showToast("Cleared imported fixtures");}catch(e){} renderFixtures(); });
+})();
+
+
+/* ---------- Fixtures Import (ICS) ---------- */
+
+function getImportedFixtures(){
+  try {
+    const raw = localStorage.getItem("thlfc_importedFixtures");
+    if(!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch(e){ return []; }
+}
+
+function setImportedFixtures(arr){
+  try { localStorage.setItem("thlfc_importedFixtures", JSON.stringify(arr || [])); } catch(e){}
+}
+
+function parseICSDate(line){
+  // Supports: DTSTART:20260131T200000Z  or DTSTART:20260131
+  const m = line.match(/DTSTART[^:]*:(\d{8})(T(\d{6})Z?)?/);
+  if(!m) return null;
+  const y=m[1].slice(0,4), mo=m[1].slice(4,6), d=m[1].slice(6,8);
+  const dateStr = `${y}-${mo}-${d}`;
+  let time="00:00";
+  if(m[3]){
+    time = `${m[3].slice(0,2)}:${m[3].slice(2,4)}`;
+  }
+  return { date: dateStr, time };
+}
+
+function cleanSummaryForTeams(s){
+  return (s||"").replace(/[^\w\s\/\-\.\&]/g,"").trim();
+}
+
+function opponentVenueFromSummary(summary){
+  const s = cleanSummaryForTeams(summary);
+  const parts = s.split(/\s+vs\s+/i);
+  if(parts.length!==2) return { opponent:s, venue:"H" };
+  const left=parts[0].trim(), right=parts[1].trim();
+  if(left.toLowerCase().startsWith("liverpool")) return { opponent:right, venue:"H" };
+  return { opponent:left, venue:"A" };
+}
+
+function compFromDesc(desc){
+  const d=(desc||"").toLowerCase();
+  if(d.includes("premier league")) return "PL";
+  if(d.includes("champions league")) return "UCL";
+  if(d.includes("fa cup")) return "FAC";
+  if(d.includes("carabao") || d.includes("league cup")) return "LC";
+  return "OTHER";
+}
+
+function parseICSFixtures(text){
+  const out=[];
+  const blocks = text.split("BEGIN:VEVENT").slice(1);
+  for(const b of blocks){
+    const dtLine = (b.match(/DTSTART[^\r\n]*/)||[])[0];
+    if(!dtLine) continue;
+    const dt=parseICSDate(dtLine);
+    if(!dt) continue;
+    const summary = (b.match(/SUMMARY:(.+)\r?\n/)||[])[1] || "";
+    const desc = (b.match(/DESCRIPTION:(.+)\r?\n/)||[])[1] || "";
+    const loc = (b.match(/LOCATION:(.+)\r?\n/)||[])[1] || "";
+    const {opponent, venue} = opponentVenueFromSummary(summary);
+    const competition = compFromDesc(desc);
+    const id = `${dt.date}-${competition.toLowerCase()}-${opponent.replace(/\s+/g,"").toLowerCase()}-${venue.toLowerCase()}-${dt.time.replace(":","")}`;
+    out.push({
+      id,
+      date: dt.date,
+      time: dt.time,
+      datetime_utc: `${dt.date}T${dt.time}:00Z`,
+      competition,
+      opponent,
+      venue,
+      location: loc
+    });
+  }
+  // de-dup
+  const seen=new Set();
+  return out.filter(f=>{ if(seen.has(f.id)) return false; seen.add(f.id); return true; });
+}
+
+// Force SW to check for updates (helps Netlify deploys)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });
+}
+
+async function reloadFixturesHard(options = {}){
+  try{
+    // Clear in-memory + local cached CSV so we definitely fetch the latest sheet
+    fixturesCache = null;
+    try{
+      localStorage.removeItem(FIXTURES_CACHE_KEY);
+      localStorage.removeItem(FIXTURES_CACHE_TS_KEY);
+    }catch(_){}
+
+    // Fetch live CSV immediately (and re-cache it)
+    const live = await fetchFixturesFromCSV();
+    if (Array.isArray(live) && live.length){
+      fixturesCache = live;
+      saveCachedCSVFixtures(live);
+    }
+
+    await renderFixtures({ preferUpcoming: options.preferUpcoming });
+  }catch(e){
+    console.error("Failed to refresh fixtures", e);
+    alert("Failed to refresh fixtures. Check your connection and try again.");
+  }
+}
+
+function bindFixturesControls(){
+  const fs = document.getElementById("fixtureShow");
+  const fc = document.getElementById("fixtureComp");
+  const fh = document.getElementById("fixtureHA");
+  const fr = document.getElementById("btnReloadFixtures");
+  if (fs) fs.onchange = () => renderFixtures();
+  if (fc) fc.onchange = () => renderFixtures();
+  if (fh) fh.onchange = () => renderFixtures();
+  if (fr) fr.onclick = reloadFixturesHard;
+}
+
+function seasonLabel(startYY){
+  const a = String(startYY).padStart(2,'0');
+  const b = String((startYY+1)%100).padStart(2,'0');
+  return `${a}/${b}`;
+}
+function populateSeasonSelect(sel){
+  if(!sel) return;
+
+  // Build from stored seasons (IDs like "2025-26", labels like "25/26")
+  const desired = sel.value || activeSeasonId();
+  sel.innerHTML = "";
+
+  const seasons = Array.isArray(state.data.seasons) ? state.data.seasons : generateSeasons().seasons;
+  const minAccountSeasonStartYear = 2024;
+  const isAccountSetupSeason = sel.id === "setupSeason";
+  for (const s of seasons) {
+    if (isAccountSetupSeason) {
+      const startYear = parseInt(String(s.id || "").split("-")[0], 10);
+      if (!Number.isFinite(startYear) || startYear < minAccountSeasonStartYear) continue;
+    }
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = s.label;
+    sel.appendChild(opt);
+  }
+
+  const hasDesired = Array.from(sel.options).some(o => o.value === desired);
+  sel.value = hasDesired ? desired : (activeSeasonId() || sel.options[0]?.value || "");
+}
+function populateAllSeasonSelects(){
+  document.querySelectorAll('select.seasonSelect, select[data-role="season"]').forEach(populateSeasonSelect);
+}
+
+
+// Ensure init runs after DOM
+if (typeof init === "function") {
+  document.addEventListener("DOMContentLoaded", () => {
+    try { init(); } catch(e) { console.error("Init error", e); alert("App error: " + ((e && e.message) ? e.message : e)); }
+  });
+}
+
+
+function openAccountSettingsModal(acc){
+  return new Promise(resolve => {
+    const dlg = $("accountSettingsModal");
+    const input = $("accountNameInput");
+    const btnSave = $("btnSaveAccountSettings");
+    const btnCancel = $("btnCancelAccountSettings");
+    const btnClose = $("btnCloseAccountSettings");
+    if (!dlg || !input || !btnSave || !btnCancel || !btnClose) {
+      resolve({ name: (acc && acc.name) || "" });
+      return;
+    }
+
+    input.value = acc && acc.name ? acc.name : "";
+
+    const cleanup = (result) => {
+      btnSave.removeEventListener("click", onSave);
+      btnCancel.removeEventListener("click", onCancel);
+      btnClose.removeEventListener("click", onCancel);
+      dlg.removeEventListener("cancel", onCancel);
+      try { dlg.close(); } catch(e) {}
+      dlg.classList.add("hidden");
+      resolve(result);
+    };
+
+    const onSave = () => cleanup({ name: (input.value || "").trim() });
+    const onCancel = () => cleanup(null);
+
+    btnSave.addEventListener("click", onSave);
+    btnCancel.addEventListener("click", onCancel);
+    btnClose.addEventListener("click", onCancel);
+    dlg.addEventListener("cancel", onCancel);
+
+    dlg.classList.remove("hidden");
+    if (dlg.showModal) dlg.showModal();
+    else dlg.setAttribute("open","");
+    setTimeout(() => input.focus(), 0);
+  });
+}
+
+function openDeleteAccountModal({ accountName, seasonTxt }) {
+  return new Promise(resolve => {
+    const dlg = $("deleteAccountModal");
+    const question = $("deleteAccountQuestion");
+    const seasonLabel = $("deleteAccountSeason");
+    const accountBtn = $("btnDeleteAccountConfirm");
+    const seasonBtn = $("btnDeleteSeasonConfirm");
+    const cancelBtn = $("btnDeleteAccountCancel");
+    const closeBtn = $("btnCloseDeleteAccount");
+    if (!dlg || !question || !seasonLabel || !accountBtn || !seasonBtn || !cancelBtn || !closeBtn) {
+      resolve("cancel");
+      return;
+    }
+
+    question.textContent = `Delete "${accountName}" or just this season?`;
+    seasonLabel.textContent = `Season ${seasonTxt}`;
+
+    const cleanup = (result) => {
+      accountBtn.removeEventListener("click", onAccount);
+      seasonBtn.removeEventListener("click", onSeason);
+      cancelBtn.removeEventListener("click", onCancel);
+      closeBtn.removeEventListener("click", onCancel);
+      dlg.removeEventListener("cancel", onCancel);
+      try { dlg.close(); } catch(e) {}
+      dlg.classList.add("hidden");
+      resolve(result);
+    };
+
+    const onAccount = () => cleanup("account");
+    const onSeason = () => cleanup("season");
+    const onCancel = () => cleanup("cancel");
+
+    accountBtn.addEventListener("click", onAccount);
+    seasonBtn.addEventListener("click", onSeason);
+    cancelBtn.addEventListener("click", onCancel);
+    closeBtn.addEventListener("click", onCancel);
+    dlg.addEventListener("cancel", onCancel);
+
+    dlg.classList.remove("hidden");
+    if (dlg.showModal) dlg.showModal();
+    else dlg.setAttribute("open","");
+    setTimeout(() => seasonBtn.focus(), 0);
+  });
+}
+
+function openAutoCupPrompt(opts){
+  const { seasonTxt, competitionLabel } = opts || {};
+  return new Promise(resolve => {
+    const dlg = $("autoCupModal");
+    const title = $("autoCupTitle");
+    const question = $("autoCupQuestion");
+    const season = $("autoCupSeason");
+    const yesBtn = $("btnAutoCupYes");
+    const noBtn = $("btnAutoCupNo");
+    const cancelBtn = $("btnAutoCupCancel");
+    const closeBtn = $("btnCloseAutoCup");
+    if (!dlg || !title || !question || !season || !yesBtn || !noBtn || !cancelBtn || !closeBtn) {
+      resolve("cancel");
+      return;
+    }
+
+    title.textContent = "Account Settings";
+    question.textContent = `AutoCup (HOME) — ${competitionLabel}?`;
+    season.textContent = `Season ${seasonTxt}`;
+
+    const cleanup = (result) => {
+      yesBtn.removeEventListener("click", onYes);
+      noBtn.removeEventListener("click", onNo);
+      cancelBtn.removeEventListener("click", onCancel);
+      closeBtn.removeEventListener("click", onCancel);
+      dlg.removeEventListener("cancel", onCancel);
+      try { dlg.close(); } catch(e) {}
+      dlg.classList.add("hidden");
+      resolve(result);
+    };
+
+    const onYes = () => cleanup("yes");
+    const onNo = () => cleanup("no");
+    const onCancel = () => cleanup("cancel");
+
+    yesBtn.addEventListener("click", onYes);
+    noBtn.addEventListener("click", onNo);
+    cancelBtn.addEventListener("click", onCancel);
+    closeBtn.addEventListener("click", onCancel);
+    dlg.addEventListener("cancel", onCancel);
+
+    dlg.classList.remove("hidden");
+    if (dlg.showModal) dlg.showModal();
+    else dlg.setAttribute("open","");
+    setTimeout(() => yesBtn.focus(), 0);
+  });
+}
+
+function openFixturesSeasonRefreshModal(){
+  return new Promise(resolve => {
+    const dlg = $("fixturesSeasonRefreshModal");
+    const question = $("fixturesSeasonRefreshQuestion");
+    const okBtn = $("btnFixturesSeasonRefreshOk");
+    if (!dlg || !question || !okBtn) {
+      resolve("ok");
+      return;
+    }
+
+    question.textContent = "Fixtures will now update";
+
+    const cleanup = (result) => {
+      okBtn.removeEventListener("click", onOk);
+      dlg.removeEventListener("cancel", onOk);
+      try { dlg.close(); } catch(e) {}
+      dlg.classList.add("hidden");
+      resolve(result);
+    };
+
+    const onOk = () => cleanup("ok");
+
+    okBtn.addEventListener("click", onOk);
+    dlg.addEventListener("cancel", onOk);
+
+    dlg.classList.remove("hidden");
+    if (dlg.showModal) dlg.showModal();
+    else dlg.setAttribute("open","");
+    setTimeout(() => okBtn.focus(), 0);
+  });
+}
+
+function openAccountSwitcher() {
+  const dlg = $("accountSwitcherModal");
+  if (!dlg) return;
+  renderAccountSwitcherList();
+  dlg.classList.remove("hidden");
+  if (dlg.showModal) dlg.showModal();
+  else dlg.setAttribute("open","");
+}
+
+function closeAccountSwitcher() {
+  const dlg = $("accountSwitcherModal");
+  if (!dlg) return;
+  try { dlg.close(); } catch(e) {}
+  dlg.classList.add("hidden");
+}
+
+function renderAccountSwitcherList() {
+  const list = $("accountSwitcherList");
+  if (!list) return;
+  list.innerHTML = "";
+  
+  const currentAccId = activeAccountId();
+  const currentSeasonId = activeSeasonId();
+  
+  // Accounts
+  const accHeader = document.createElement("div");
+  accHeader.className = "fieldLabel";
+  accHeader.style.marginLeft = "16px";
+  accHeader.style.marginTop = "10px";
+  accHeader.textContent = "Accounts";
+  list.appendChild(accHeader);
+  
+  (state.data.accounts || []).forEach(acc => {
+    const item = document.createElement("button");
+    item.className = "item clickable";
+    item.style.width = "100%";
+    item.style.display = "flex";
+    item.style.justifyContent = "space-between";
+    item.style.alignItems = "center";
+    
+    item.innerHTML = `
+      <div class="itemTitle" style="${acc.id === currentAccId ? 'color:var(--primary);' : ''}">${acc.name}</div>
+      ${acc.id === currentAccId ? '<div style="color:var(--primary); font-weight:bold;">✓</div>' : ''}
+    `;
+    
+    item.onclick = () => {
+      if (acc.id !== currentAccId) {
+        setActiveAccount(acc.id);
+      }
+      closeAccountSwitcher();
+    };
+    
+    list.appendChild(item);
+  });
+  
+  // Seasons
+  const seasons = getAccountSeasonOptions(currentAccId);
+  if (seasons.length > 1) {
+    const seasonHeader = document.createElement("div");
+    seasonHeader.className = "fieldLabel";
+    seasonHeader.style.marginLeft = "16px";
+    seasonHeader.style.marginTop = "24px";
+    seasonHeader.textContent = "Seasons";
+    list.appendChild(seasonHeader);
+
+    seasons.forEach(s => {
+      const item = document.createElement("button");
+      item.className = "item clickable";
+      item.style.width = "100%";
+      item.style.display = "flex";
+      item.style.justifyContent = "space-between";
+      item.style.alignItems = "center";
+
+      item.innerHTML = `
+        <div class="itemTitle" style="${s.id === currentSeasonId ? 'color:var(--primary);' : ''}">${s.label}</div>
+        ${s.id === currentSeasonId ? '<div style="color:var(--primary); font-weight:bold;">✓</div>' : ''}
+      `;
+
+      item.onclick = () => {
+        if (s.id !== currentSeasonId) {
+          handleSeasonChange(s.id);
+        }
+        closeAccountSwitcher();
+      };
+
+      list.appendChild(item);
+    });
+  }
+  
+  const manageBtn = document.createElement("button");
+  manageBtn.className = "item clickable";
+  manageBtn.style.width = "100%";
+  manageBtn.style.textAlign = "center";
+  manageBtn.style.color = "var(--primary)";
+  manageBtn.style.justifyContent = "center";
+  manageBtn.style.marginTop = "24px";
+  manageBtn.innerHTML = `<div class="itemTitle">Manage Accounts</div>`;
+  manageBtn.onclick = () => {
+    closeAccountSwitcher();
+    setView("settings");
+  };
+  list.appendChild(manageBtn);
+}
+
+async function handleSeasonChange(seasonId){
+  setActiveSeason(seasonId);
+  if (state.currentView !== "fixtures") return;
+  const choice = await openFixturesSeasonRefreshModal();
+  if (choice !== "ok") return;
+  await reloadFixturesHard({ preferUpcoming: true });
+}
+
+function seasonLabelFromId(seasonId){
+  const match = String(seasonId || "").match(/^(\d{4})/);
+  if (!match) return String(seasonId || "");
+  const startYear = Number(match[1]);
+  if (!Number.isFinite(startYear)) return String(seasonId || "");
+  return seasonLabel(startYear % 100);
+}
+
+async function editActiveAccount(){
+  const accId = activeAccountId();
+  const acc = state.data.accounts.find(a=>a.id===accId);
+  if(!acc){ alert("No account selected"); return; }
+  const accountResult = await openAccountSettingsModal(acc);
+  if(!accountResult) return;
+  const originalName = acc.name;
+  acc.name = accountResult.name || acc.name;
+
+  const seasonTxt = seasonLabelFromId(activeSeasonId());
+  const lc = await openAutoCupPrompt({ seasonTxt, competitionLabel: "League Cup" });
+  if (lc === "cancel") { acc.name = originalName; return; }
+  const fac = await openAutoCupPrompt({ seasonTxt, competitionLabel: "FA Cup" });
+  if (fac === "cancel") { acc.name = originalName; return; }
+  const ucl = await openAutoCupPrompt({ seasonTxt, competitionLabel: "Champions League" });
+  if (ucl === "cancel") { acc.name = originalName; return; }
+
+  const lcYes = lc === "yes";
+  const facYes = fac === "yes";
+  const uclYes = ucl === "yes";
+
+  setAutoCupForSeason(acc, activeSeasonId(), {LC:lcYes, FAC:facYes, UCL:uclYes});
+  acc.autoCup = {LC:lcYes, FAC:facYes, UCL:uclYes};
+
+  save();
+  renderAccountSelect();
+  renderAll();
+  showToast("Account updated");
+}
+
+async function deleteActiveAccount(){
+  const accId = activeAccountId();
+  const acc = state.data.accounts.find(a=>a.id===accId);
+  if(!acc){ alert("No account selected"); return; }
+  const seasonId = activeSeasonId();
+  const seasonTxt = seasonLabelFromId(seasonId);
+  const choice = await openDeleteAccountModal({ accountName: acc.name, seasonTxt });
+  if(choice === "season") {
+    const ok = confirm(`Delete season ${seasonTxt} for "${acc.name}"?\nThis will remove tracked matches for this season only.`);
+    if(!ok) return;
+    state.data.matches = state.data.matches.filter(m => !(m.accountId === accId && m.seasonId === seasonId));
+    if (acc.autoCupBySeason && acc.autoCupBySeason[seasonId]) {
+      delete acc.autoCupBySeason[seasonId];
+    }
+    acc.autoCup = { LC:false, FAC:false, UCL:false };
+    const options = getAccountSeasonOptions(accId);
+    if (state.data.activeSeasonId === seasonId) {
+      state.data.activeSeasonId = options.find(s => s.id !== seasonId)?.id || options[0]?.id || "";
+    }
+    save();
+    renderAll();
+    showToast("Season deleted");
+    return;
+  }
+
+  if (choice !== "account") return;
+
+  if(state.data.accounts.length <= 1){
+    alert("You must have at least 1 account.");
+    return;
+  }
+  const ok = confirm(`Delete account "${acc.name}"?\nThis will also delete all tracked matches for this account.`);
+  if(!ok) return;
+
+  state.data.accounts = state.data.accounts.filter(a=>a.id!==accId);
+  state.data.matches = state.data.matches.filter(m=>m.accountId!==accId);
+
+  // Set new active account
+  state.data.activeAccountId = state.data.accounts[0]?.id || null;
+  save();
+  renderAccountSelect();
+  renderAll();
+  showToast("Account deleted");
+}
+
+
+
+
+
+
+
+
+function openSupport(){
+  const dlg = $("supportModal");
+  if (!dlg) return;
+  dlg.classList.remove("hidden");
+  if (dlg.showModal) dlg.showModal();
+  else dlg.setAttribute("open","");
+  showBackupNudge();
+}
+function closeSupport(){
+  const dlg = $("supportModal");
+  if (!dlg) return;
+  try { dlg.close(); } catch(e) {}
+  dlg.classList.add("hidden");
+}
+
+
+onEl("btnToggleFeedback","click", ()=>{
+  const panel = $("feedbackPanel");
+  const arrow = $("feedbackArrow");
+  if (!panel || !arrow) return;
+  const open = panel.classList.toggle("hidden") === false;
+  arrow.textContent = open ? "▾" : "▸";
+});
+
+</script>
+</body>
+</html>
