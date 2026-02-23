@@ -1,38 +1,15 @@
-{
-  "name": "LFC Tools Credit Tracker",
-  "short_name": "CreditTracker",
-  "start_url": "./",
-  "scope": "./",
-  "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
-  "icons": [
-    {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
-    }
-  ]
-}
+const CACHE = "thlfc-single-pwa-v5.5.0-checklist-nav";
+const ASSETS = ["./","./index.html","./manifest.json","./sw.js","./icon.svg",
+  "icons/icon-192.png",
+  "icons/icon-512.png",
+  "icon.svg"];
+self.addEventListener("install", (event) => { self.skipWaiting(); event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))); });
+self.addEventListener("activate", (event) => { event.waitUntil((async()=>{ const keys=await caches.keys(); await Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))); await self.clients.claim(); })()); });
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.mode === "navigate") {
+    event.respondWith(fetch(req).then(res=>{ const copy=res.clone(); caches.open(CACHE).then(c=>c.put("./index.html", copy)).catch(()=>{}); return res; }).catch(()=>caches.match("./index.html")));
+    return;
+  }
+  event.respondWith(caches.match(req).then(cached => cached || fetch(req)));
+});
